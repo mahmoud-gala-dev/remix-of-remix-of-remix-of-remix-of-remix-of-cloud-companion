@@ -12,7 +12,9 @@ import {
   LogOut,
   Menu,
   Settings,
+  MessagesSquare,
   ShieldAlert,
+  Timer,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,8 @@ const baseNav = [
   { to: "/compare", label: "Compare Excel", icon: GitCompare },
   { to: "/tasks", label: "Priority Tasks", icon: ClipboardList },
   { to: "/projects", label: "Projects", icon: FolderKanban },
+  { to: "/chat", label: "Team Chat", icon: MessagesSquare },
+  { to: "/resolution-times", label: "Resolution Times", icon: Timer },
   { to: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
@@ -56,6 +60,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { to: "/dashboard", label: "Home", icon: LayoutDashboard },
     { to: "/bugs", label: "Bugs", icon: Bug },
     { to: "/tasks", label: "Tasks", icon: ClipboardList },
+    { to: "/chat", label: "Chat", icon: MessagesSquare },
     { to: "/projects", label: "Projects", icon: FolderKanban },
     { to: "/settings", label: "More", icon: Settings },
   ];
