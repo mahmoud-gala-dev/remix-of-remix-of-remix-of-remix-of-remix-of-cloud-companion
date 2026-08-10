@@ -504,6 +504,41 @@ export type Database = {
           },
         ]
       }
+      project_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          project_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: number
+          project_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: number
+          project_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
@@ -712,6 +747,10 @@ export type Database = {
       apply_pending_migrations: { Args: never; Returns: Json }
       bug_dashboard_stats: { Args: { _scope?: string }; Returns: Json }
       bug_exists: { Args: { _bug_id: number }; Returns: boolean }
+      can_access_project_chat: {
+        Args: { _project_id: number; _user_id?: string }
+        Returns: boolean
+      }
       can_create_tasks: { Args: { _user_id: string }; Returns: boolean }
       can_manage_bug: {
         Args: { _bug_id: number; _user_id?: string }
