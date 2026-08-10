@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/chat")({
   }),
   component: ChatPage,
   errorComponent: RouteErrorBoundary,
-  notFoundComponent: RouteNotFound,
+  notFoundComponent: () => <RouteNotFound label="page" />,
 });
 
 function ChatPage() {
@@ -62,7 +62,8 @@ function ChatPage() {
   );
 
   useEffect(() => {
-    if (projectId === null && projects.length > 0) setProjectId(Number(projects[0].id));
+    const first = projects[0];
+    if (projectId === null && first) setProjectId(Number(first.id));
   }, [projectId, projects]);
 
   const messagesQuery = useQuery({
@@ -193,7 +194,8 @@ function ChatPage() {
                   const mine = message.user_id === user?.id;
                   const showDay =
                     index === 0 ||
-                    messageDay(messages[index - 1].created_at) !== messageDay(message.created_at);
+                    messageDay(messages[index - 1]?.created_at ?? message.created_at) !==
+                      messageDay(message.created_at);
                   const author = nameFor(message.user_id);
                   return (
                     <div key={message.id} className="space-y-3">
