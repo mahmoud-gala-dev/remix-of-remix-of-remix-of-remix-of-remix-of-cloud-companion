@@ -72,6 +72,7 @@ export const dictionaries = {
     "resolution.col.title": "Title",
     "resolution.col.module": "Module",
     "resolution.col.time": "Time",
+  },
 
   ar: {
     "nav.dashboard": "لوحة التحكم",
