@@ -128,6 +128,7 @@ function RootShell({ children }: { children: ReactNode }) {
 import { AvatarProvider } from "@/context/AvatarContext";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { registerServiceWorker } from "@/lib/pwa";
+import { LanguageProvider } from "@/lib/i18n";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -138,15 +139,18 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AvatarProvider>
-        <TooltipProvider>
-          <OfflineBanner />
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <Toaster />
-        </TooltipProvider>
-      </AvatarProvider>
+      <LanguageProvider>
+        <AvatarProvider>
+          <TooltipProvider>
+            <OfflineBanner />
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <Toaster />
+          </TooltipProvider>
+        </AvatarProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
+
 

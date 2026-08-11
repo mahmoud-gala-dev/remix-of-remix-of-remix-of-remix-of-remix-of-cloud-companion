@@ -26,32 +26,38 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
+import { LanguageToggle } from "@/components/layout/LanguageToggle";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
 import { fetchChatActivity, unreadByProject } from "@/lib/chat";
 import { useUserAvatar } from "@/context/AvatarContext";
 
 const baseNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/my-work", label: "My Work", icon: Inbox },
-  { to: "/bugs", label: "Bugs", icon: Bug },
-  { to: "/compare", label: "Compare Excel", icon: GitCompare },
-  { to: "/tasks", label: "Priority Tasks", icon: ClipboardList },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/chat", label: "Team Chat", icon: MessagesSquare },
-  { to: "/activity", label: "Activity Feed", icon: Activity },
-  { to: "/resolution-times", label: "Resolution Times", icon: Timer },
-  { to: "/analytics", label: "Analytics", icon: PieChart },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-];
+  { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/my-work", key: "nav.myWork", icon: Inbox },
+  { to: "/bugs", key: "nav.bugs", icon: Bug },
+  { to: "/compare", key: "nav.compare", icon: GitCompare },
+  { to: "/tasks", key: "nav.tasks", icon: ClipboardList },
+  { to: "/projects", key: "nav.projects", icon: FolderKanban },
+  { to: "/chat", key: "nav.chat", icon: MessagesSquare },
+  { to: "/activity", key: "nav.activity", icon: Activity },
+  { to: "/resolution-times", key: "nav.resolutionTimes", icon: Timer },
+  { to: "/analytics", key: "nav.analytics", icon: PieChart },
+  { to: "/reports", key: "nav.reports", icon: BarChart3 },
+] as const;
+
 
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { t, direction } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
+
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["notifications", "unread", user?.id],
@@ -80,19 +86,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
   const mobileTabs = [
-    { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { to: "/bugs", label: "Bugs", icon: Bug },
-    { to: "/tasks", label: "Tasks", icon: ClipboardList },
-    { to: "/chat", label: "Chat", icon: MessagesSquare },
-    { to: "/projects", label: "Projects", icon: FolderKanban },
-    { to: "/settings", label: "More", icon: Settings },
+    { to: "/dashboard", key: "mobile.home", icon: LayoutDashboard },
+    { to: "/bugs", key: "mobile.bugs", icon: Bug },
+    { to: "/tasks", key: "mobile.tasks", icon: ClipboardList },
+    { to: "/chat", key: "mobile.chat", icon: MessagesSquare },
+    { to: "/projects", key: "mobile.projects", icon: FolderKanban },
+    { to: "/settings", key: "mobile.more", icon: Settings },
+  ] as const;
+
+  const navItems: readonly { to: string; key: TranslationKey; icon: typeof Bug }[] = [
+    ...baseNav,
+    ...(user?.role === "admin"
+      ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
+      : []),
+    { to: "/settings", key: "nav.settings", icon: Settings },
+
   ];
 
-  const navItems = [
-    ...baseNav,
-    ...(user?.role === "admin" ? [{ to: "/users", label: "Users", icon: Users }] : []),
-    { to: "/settings", label: "Settings", icon: Settings },
-  ];
 
   const handleLogout = async () => {
     setMobileOpen(false);
@@ -101,7 +111,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   };
 
   const navList = (
-    <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Main">
+    <nav className="flex-1 space-y-1 px-3 py-4" aria-label={t("shell.main")}>
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to || location.pathname.startsWith(item.to + "/");
@@ -118,10 +128,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
             }`}
           >
-            <item.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-            {item.label}
+            <item.icon className="me-3 h-5 w-5" aria-hidden="true" />
+            {t(item.key)}
             {badgeCount > 0 && !isActive && (
-              <Badge className="ml-auto h-5 min-w-5 justify-center px-1 text-[10px]">
+              <Badge className="ms-auto h-5 min-w-5 justify-center px-1 text-[10px]">
                 {badgeCount > 99 ? "99+" : badgeCount}
               </Badge>
             )}
@@ -132,13 +142,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
 
+
   const { avatarUrl } = useUserAvatar();
 
   const userFooter = (
     <div className="border-t border-sidebar-border p-4">
       <div className="mb-4 flex items-center gap-3">
         <Avatar className="h-9 w-9">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={user?.username ?? "User Avatar"} /> : null}
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} alt={user?.username ?? t("shell.userAvatar")} />
+          ) : null}
           <AvatarFallback className="bg-primary/15 font-medium text-primary">
             {user?.username?.substring(0, 2).toUpperCase() ?? "??"}
           </AvatarFallback>
@@ -149,17 +162,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-        <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
-        Sign out
+        <LogOut className="me-2 h-4 w-4" aria-hidden="true" />
+        {t("shell.signOut")}
       </Button>
+
     </div>
   );
 
   return (
     <div className="flex h-screen bg-background">
-      <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <aside className="hidden w-64 flex-col border-e border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-          <ShieldAlert className="mr-2 h-6 w-6 text-primary" aria-hidden="true" />
+          <ShieldAlert className="me-2 h-6 w-6 text-primary" aria-hidden="true" />
           <span className="text-lg font-bold tracking-tight">ElectroPI</span>
         </div>
         {navList}
@@ -171,13 +185,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 md:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+                <Button variant="ghost" size="icon" aria-label={t("shell.openMenu")}>
                   <Menu className="h-5 w-5" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="flex w-64 flex-col bg-sidebar p-0">
+              <SheetContent
+                side={direction === "rtl" ? "right" : "left"}
+                className="flex w-64 flex-col bg-sidebar p-0"
+              >
                 <SheetTitle className="flex h-16 items-center border-b border-sidebar-border px-6 text-lg font-bold">
-                  <ShieldAlert className="mr-2 h-6 w-6 text-primary" aria-hidden="true" />
+                  <ShieldAlert className="me-2 h-6 w-6 text-primary" aria-hidden="true" />
                   ElectroPI
                 </SheetTitle>
                 {navList}
@@ -187,21 +204,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <ShieldAlert className="h-6 w-6 text-primary" aria-hidden="true" />
             <span className="text-lg font-bold">ElectroPI</span>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <GlobalSearch />
+            <LanguageToggle />
             <Link
               to="/notifications"
               className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label={
-                unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
+                unreadCount > 0
+                  ? t("shell.notificationsUnread", { count: unreadCount })
+                  : t("shell.notifications")
               }
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-destructive" />
+                <span className="absolute end-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-destructive" />
               )}
             </Link>
           </div>
+
         </header>
 
         <main className="flex-1 overflow-auto p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
@@ -209,7 +230,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Mobile bottom tab bar — native app feel on small screens */}
         <nav
           className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-          aria-label="Primary mobile"
+          aria-label={t("shell.primaryMobile")}
         >
           {mobileTabs.map((item) => {
             const isActive =
@@ -230,7 +251,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full border border-card bg-destructive" />
                   )}
                 </span>
-                {item.label}
+                {t(item.key)}
               </Link>
             );
           })}
