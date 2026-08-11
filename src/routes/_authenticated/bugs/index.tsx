@@ -79,6 +79,7 @@ import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
+import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
 import {
   deleteSavedFilter,
   readSavedFilters,
