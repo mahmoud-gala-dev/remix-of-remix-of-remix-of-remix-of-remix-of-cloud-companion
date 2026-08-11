@@ -105,7 +105,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   };
 
   const navList = (
-    <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Main">
+    <nav className="flex-1 space-y-1 px-3 py-4" aria-label={t("shell.main")}>
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to || location.pathname.startsWith(item.to + "/");
@@ -122,10 +122,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
             }`}
           >
-            <item.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-            {item.label}
+            <item.icon className="me-3 h-5 w-5" aria-hidden="true" />
+            {t(item.key)}
             {badgeCount > 0 && !isActive && (
-              <Badge className="ml-auto h-5 min-w-5 justify-center px-1 text-[10px]">
+              <Badge className="ms-auto h-5 min-w-5 justify-center px-1 text-[10px]">
                 {badgeCount > 99 ? "99+" : badgeCount}
               </Badge>
             )}
@@ -134,6 +134,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       })}
     </nav>
   );
+
 
 
   const { avatarUrl } = useUserAvatar();
