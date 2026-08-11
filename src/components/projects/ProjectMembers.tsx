@@ -89,7 +89,7 @@ export function ProjectMembers({ projectId, profiles, canManage }: ProjectMember
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button size="sm" variant="outline">
-                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                <UserPlus className="me-1.5 h-3.5 w-3.5" />
                 Add member
               </Button>
             </PopoverTrigger>
@@ -142,7 +142,7 @@ export function ProjectMembers({ projectId, profiles, canManage }: ProjectMember
                     <button
                       type="button"
                       onClick={() => removeMember.mutate(member.id)}
-                      className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                      className="ms-1 rounded-full p-0.5 hover:bg-muted"
                       aria-label={`Remove ${username}`}
                     >
                       <X className="h-3 w-3" />

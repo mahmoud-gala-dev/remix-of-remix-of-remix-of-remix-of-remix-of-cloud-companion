@@ -235,7 +235,7 @@ export function DatabaseMigrationPanel() {
           onClick={() => autoApply.mutate()}
           disabled={autoApply.isPending}
         >
-          <PlayCircle className="mr-1.5 h-3.5 w-3.5" />
+          <PlayCircle className="me-1.5 h-3.5 w-3.5" />
           {autoApply.isPending ? "Applying…" : "Check & auto-apply migrations"}
         </Button>
 
@@ -246,11 +246,11 @@ export function DatabaseMigrationPanel() {
           onClick={() => query.refetch()}
           disabled={query.isFetching}
         >
-          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          <RefreshCw className="me-1.5 h-3.5 w-3.5" />
           Refresh status
         </Button>
         <Button type="button" size="sm" onClick={copySql}>
-          <Clipboard className="mr-1.5 h-3.5 w-3.5" />
+          <Clipboard className="me-1.5 h-3.5 w-3.5" />
           Copy pending SQL
         </Button>
         <Button asChild type="button" variant="secondary" size="sm">
@@ -259,7 +259,7 @@ export function DatabaseMigrationPanel() {
             target="_blank"
             rel="noreferrer"
           >
-            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+            <ExternalLink className="me-1.5 h-3.5 w-3.5" />
             Open SQL Editor
           </a>
         </Button>

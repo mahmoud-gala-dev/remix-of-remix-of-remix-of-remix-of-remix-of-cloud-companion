@@ -38,7 +38,7 @@ export function BugHistoryTimeline({
           <p className="text-sm text-muted-foreground">No changes recorded yet</p>
         )}
         {history.map((h) => (
-          <div key={h.id} className="flex flex-col gap-0.5 border-l-2 border-border pl-3 text-sm">
+          <div key={h.id} className="flex flex-col gap-0.5 border-s-2 border-border ps-3 text-sm">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-medium">{nameFor(profileMap, h.user_id)}</span>
               <span className="text-muted-foreground">changed {h.field}</span>

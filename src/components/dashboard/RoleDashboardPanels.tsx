@@ -210,10 +210,10 @@ function ResolutionAnalyticsPanel({ role }: { role: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50 text-xs text-muted-foreground">
-                  <th className="px-2 py-2 text-left font-semibold">Error</th>
-                  <th className="px-2 py-2 text-left font-semibold">Developer</th>
-                  <th className="px-2 py-2 text-left font-semibold">Module</th>
-                  <th className="px-2 py-2 text-right font-semibold">Time</th>
+                  <th className="px-2 py-2 text-start font-semibold">Error</th>
+                  <th className="px-2 py-2 text-start font-semibold">Developer</th>
+                  <th className="px-2 py-2 text-start font-semibold">Module</th>
+                  <th className="px-2 py-2 text-end font-semibold">Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -233,7 +233,7 @@ function ResolutionAnalyticsPanel({ role }: { role: string }) {
                     </td>
                     <td className="px-2 py-2">{row.developerName}</td>
                     <td className="px-2 py-2">{row.module}</td>
-                    <td className="px-2 py-2 text-right font-mono">
+                    <td className="px-2 py-2 text-end font-mono">
                       {formatDuration(row.totalSeconds)}
                     </td>
                   </tr>

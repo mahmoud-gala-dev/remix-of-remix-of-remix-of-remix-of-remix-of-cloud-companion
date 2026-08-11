@@ -112,17 +112,17 @@ export function TaskTimer({ taskId }: { taskId: number }) {
       <Button
         size="sm"
         variant={running ? "destructive" : "secondary"}
-        className="ml-auto h-7"
+        className="ms-auto h-7"
         disabled={start.isPending || stop.isPending}
         onClick={() => (running ? stop.mutate() : start.mutate())}
       >
         {running ? (
           <>
-            <Pause className="mr-1 h-3.5 w-3.5" /> Stop
+            <Pause className="me-1 h-3.5 w-3.5" /> Stop
           </>
         ) : (
           <>
-            <Play className="mr-1 h-3.5 w-3.5" /> Start
+            <Play className="me-1 h-3.5 w-3.5" /> Start
           </>
         )}
       </Button>

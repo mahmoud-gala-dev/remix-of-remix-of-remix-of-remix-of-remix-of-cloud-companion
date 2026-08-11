@@ -136,10 +136,10 @@ export function BugComments({
                             )
                           }
                         >
-                          <Check className="mr-1 h-3.5 w-3.5" /> Save
+                          <Check className="me-1 h-3.5 w-3.5" /> Save
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                          <X className="mr-1 h-3.5 w-3.5" /> Cancel
+                          <X className="me-1 h-3.5 w-3.5" /> Cancel
                         </Button>
                       </div>
                     </div>

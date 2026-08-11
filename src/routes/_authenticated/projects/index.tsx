@@ -203,7 +203,7 @@ function ProjectsPage() {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={openCreate} className="shrink-0">
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                   New project
                 </Button>
               </DialogTrigger>
@@ -302,7 +302,7 @@ function ProjectsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search projects"
-          className="h-9 pl-9"
+          className="h-9 ps-9"
         />
       </div>
 

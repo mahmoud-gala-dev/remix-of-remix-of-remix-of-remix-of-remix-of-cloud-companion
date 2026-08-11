@@ -52,7 +52,7 @@ export function KeyboardShortcutsDialog({
       {showTrigger && (
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" aria-label="Keyboard shortcuts">
-            <Keyboard className="mr-1.5 h-4 w-4" /> Shortcuts
+            <Keyboard className="me-1.5 h-4 w-4" /> Shortcuts
           </Button>
         </DialogTrigger>
       )}

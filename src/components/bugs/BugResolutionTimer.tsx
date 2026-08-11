@@ -50,12 +50,12 @@ export function BugResolutionTimer({
               >
                 {tracker.running ? (
                   <>
-                    <Pause className="mr-1.5 h-3.5 w-3.5" />
+                    <Pause className="me-1.5 h-3.5 w-3.5" />
                     Stop
                   </>
                 ) : (
                   <>
-                    <Play className="mr-1.5 h-3.5 w-3.5" />
+                    <Play className="me-1.5 h-3.5 w-3.5" />
                     Start
                   </>
                 )}

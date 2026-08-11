@@ -183,7 +183,7 @@ export function BugAttachments({ bugId }: { bugId: number }) {
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            <Upload className="me-1.5 h-3.5 w-3.5" />
             {isUploading ? "Uploading..." : "Upload file"}
           </Button>
 
@@ -197,7 +197,7 @@ export function BugAttachments({ bugId }: { bugId: number }) {
               onKeyDown={(event) => event.key === "Enter" && handleAddLink()}
             />
             <Button size="sm" variant="outline" onClick={handleAddLink}>
-              <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
+              <LinkIcon className="me-1.5 h-3.5 w-3.5" />
               Add link
             </Button>
           </div>
@@ -220,19 +220,19 @@ export function BugAttachments({ bugId }: { bugId: number }) {
 
           {recSupported && recState === "idle" && (
             <Button size="sm" variant="outline" onClick={startRec}>
-              <Video className="mr-1.5 h-3.5 w-3.5 text-destructive" />
+              <Video className="me-1.5 h-3.5 w-3.5 text-destructive" />
               Record Screen
             </Button>
           )}
           {recSupported && recState === "requesting" && (
             <Button size="sm" variant="outline" disabled>
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" />
               Waiting for permission...
             </Button>
           )}
           {recSupported && recState === "recording" && (
             <Button size="sm" variant="destructive" onClick={stopRec}>
-              <Square className="mr-1.5 h-3.5 w-3.5 fill-current" />
+              <Square className="me-1.5 h-3.5 w-3.5 fill-current" />
               Stop Recording
             </Button>
           )}

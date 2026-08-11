@@ -112,9 +112,9 @@ export function GlobalSearch() {
                     go(() => navigate({ to: "/bugs/$id", params: { id: String(hit.id) } }))
                   }
                 >
-                  <Bug className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <Bug className="me-2 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="truncate">{hit.label}</span>
-                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  <span className="ms-auto shrink-0 text-xs text-muted-foreground">
                     {hit.sublabel}
                   </span>
                 </CommandItem>
@@ -132,9 +132,9 @@ export function GlobalSearch() {
                     go(() => navigate({ to: "/projects/$id", params: { id: String(hit.id) } }))
                   }
                 >
-                  <FolderKanban className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <FolderKanban className="me-2 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="truncate">{hit.label}</span>
-                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  <span className="ms-auto shrink-0 text-xs text-muted-foreground">
                     {hit.sublabel}
                   </span>
                 </CommandItem>
@@ -150,9 +150,9 @@ export function GlobalSearch() {
                   value={`task-${hit.id}-${hit.label}`}
                   onSelect={() => go(() => navigate({ to: "/tasks" }))}
                 >
-                  <ClipboardList className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <ClipboardList className="me-2 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="truncate">{hit.label}</span>
-                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  <span className="ms-auto shrink-0 text-xs text-muted-foreground">
                     {hit.sublabel}
                   </span>
                 </CommandItem>

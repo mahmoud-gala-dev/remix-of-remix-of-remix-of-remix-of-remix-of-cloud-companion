@@ -212,9 +212,9 @@ function ProjectDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
-      <Button asChild variant="ghost" size="sm" className="-ml-2">
+      <Button asChild variant="ghost" size="sm" className="-ms-2">
         <Link to="/projects">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="me-2 h-4 w-4" />
           Back to Projects
         </Link>
       </Button>
@@ -237,11 +237,11 @@ function ProjectDetailPage() {
               {canManage && (
                 <>
                   <Button variant="outline" size="sm" onClick={openEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
+                    <Pencil className="me-2 h-4 w-4" />
                     Edit
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                    <Trash2 className="me-2 h-4 w-4 text-destructive" />
                     Delete
                   </Button>
                 </>

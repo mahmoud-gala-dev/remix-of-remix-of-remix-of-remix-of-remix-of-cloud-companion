@@ -129,7 +129,7 @@ export const MockDataControls: React.FC<MockDataControlsProps> = ({
           {mockUsersCount > 0 && (
             <Badge
               variant="secondary"
-              className="ml-1 px-1.5 py-0.2 text-[10px] bg-destructive/15 text-destructive border-none font-bold"
+              className="ms-1 px-1.5 py-0.2 text-[10px] bg-destructive/15 text-destructive border-none font-bold"
             >
               {mockUsersCount} Users
             </Badge>

@@ -149,9 +149,9 @@ export function BugAssistance({
         />
         <Button size="sm" disabled={createRequest.isPending} onClick={() => createRequest.mutate()}>
           {type === "meeting" ? (
-            <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+            <CalendarClock className="me-1.5 h-3.5 w-3.5" />
           ) : (
-            <HandHelping className="mr-1.5 h-3.5 w-3.5" />
+            <HandHelping className="me-1.5 h-3.5 w-3.5" />
           )}
           Send request
         </Button>

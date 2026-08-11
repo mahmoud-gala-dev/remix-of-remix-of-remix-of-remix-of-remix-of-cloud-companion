@@ -365,7 +365,7 @@ function ChatPage() {
                     <span className={cn("truncate", count > 0 && !active && "font-semibold")}>
                       {project.name}
                     </span>
-                    <span className="ml-2 flex shrink-0 items-center gap-1.5">
+                    <span className="ms-2 flex shrink-0 items-center gap-1.5">
                       {count > 0 && !active && (
                         <Badge className="h-5 min-w-5 justify-center px-1 text-[10px]">
                           {count > 99 ? "99+" : count}
@@ -387,7 +387,7 @@ function ChatPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4 pt-4">
-            <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ maxHeight: "52vh" }}>
+            <div className="flex-1 space-y-3 overflow-y-auto pe-1" style={{ maxHeight: "52vh" }}>
               {messagesQuery.isLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : messagesQuery.isError ? (
@@ -488,7 +488,7 @@ function ChatPage() {
                               <span className="font-medium">
                                 {parent.user_id === user?.id ? "You" : nameFor(parent.user_id)}
                               </span>
-                              <span className="ml-1 line-clamp-2 opacity-80">{parent.content}</span>
+                              <span className="ms-1 line-clamp-2 opacity-80">{parent.content}</span>
                             </div>
                           )}
 
@@ -570,7 +570,7 @@ function ChatPage() {
                     <li key={profile.id}>
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-start text-sm hover:bg-muted"
                         onClick={() => pickMention(profile.username)}
                       >
                         <AtSign className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />

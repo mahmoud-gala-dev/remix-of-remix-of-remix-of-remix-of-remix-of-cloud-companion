@@ -158,7 +158,7 @@ function ResetPasswordPage() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  <KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />
+                  <KeyRound className="me-2 h-4 w-4" aria-hidden="true" />
                   {form.formState.isSubmitting ? "Updating…" : "Update password"}
                 </Button>
               </form>

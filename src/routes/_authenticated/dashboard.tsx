@@ -408,16 +408,16 @@ function DashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
+                    <th className="px-3 py-2 text-start text-xs font-semibold text-muted-foreground">
                       Module
                     </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
+                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
                       Total
                     </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
+                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
                       Open
                     </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
+                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
                       Resolved
                     </th>
                   </tr>
@@ -429,8 +429,8 @@ function DashboardPage() {
                       className="border-b border-border/30 transition-colors hover:bg-muted/30"
                     >
                       <td className="px-3 py-2.5 font-medium">{m.module}</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{m.total}</td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-end tabular-nums">{m.total}</td>
+                      <td className="px-3 py-2.5 text-end">
                         <Badge
                           variant="outline"
                           className="border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive"
@@ -438,7 +438,7 @@ function DashboardPage() {
                           {m.open}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-end">
                         <Badge
                           variant="outline"
                           className="border-success/30 bg-success/10 text-xs font-semibold text-success"

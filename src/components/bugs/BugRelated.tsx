@@ -80,7 +80,7 @@ export function BugRelated({ bugId, canManage }: { bugId: number; canManage: boo
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button size="sm" variant="outline">
-                <Plus className="mr-1 h-3.5 w-3.5" /> Link bug
+                <Plus className="me-1 h-3.5 w-3.5" /> Link bug
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-0">
