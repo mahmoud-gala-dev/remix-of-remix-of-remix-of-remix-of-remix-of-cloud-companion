@@ -185,13 +185,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 md:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+                <Button variant="ghost" size="icon" aria-label={t("shell.openMenu")}>
                   <Menu className="h-5 w-5" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="flex w-64 flex-col bg-sidebar p-0">
+              <SheetContent
+                side={direction === "rtl" ? "right" : "left"}
+                className="flex w-64 flex-col bg-sidebar p-0"
+              >
                 <SheetTitle className="flex h-16 items-center border-b border-sidebar-border px-6 text-lg font-bold">
-                  <ShieldAlert className="mr-2 h-6 w-6 text-primary" aria-hidden="true" />
+                  <ShieldAlert className="me-2 h-6 w-6 text-primary" aria-hidden="true" />
                   ElectroPI
                 </SheetTitle>
                 {navList}
@@ -201,21 +204,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <ShieldAlert className="h-6 w-6 text-primary" aria-hidden="true" />
             <span className="text-lg font-bold">ElectroPI</span>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <GlobalSearch />
+            <LanguageToggle />
             <Link
               to="/notifications"
               className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label={
-                unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
+                unreadCount > 0
+                  ? t("shell.notificationsUnread", { count: unreadCount })
+                  : t("shell.notifications")
               }
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-destructive" />
+                <span className="absolute end-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-destructive" />
               )}
             </Link>
           </div>
+
         </header>
 
         <main className="flex-1 overflow-auto p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
