@@ -109,6 +109,8 @@ function ChartTooltip({
 }
 
 function ReportsPage() {
+  const { user } = useAuth();
+  const canRunSlaScan = isStaffRole(user?.role) || user?.role === "monitor";
   const [range, setRange] = useState(30);
   const [reportFilterName, setReportFilterName] = useState("");
   const [savedReportFilters, setSavedReportFilters] = useState<SavedFilter<ReportFilterState>[]>(
