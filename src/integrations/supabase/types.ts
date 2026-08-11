@@ -506,26 +506,41 @@ export type Database = {
       }
       project_messages: {
         Row: {
+          attachment_name: string | null
+          attachment_path: string | null
+          attachment_type: string | null
           content: string
           created_at: string
+          edited_at: string | null
           id: number
           project_id: number
+          reply_to_id: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_type?: string | null
           content: string
           created_at?: string
+          edited_at?: string | null
           id?: number
           project_id: number
+          reply_to_id?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_type?: string | null
           content?: string
           created_at?: string
+          edited_at?: string | null
           id?: number
           project_id?: number
+          reply_to_id?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -535,6 +550,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "project_messages"
             referencedColumns: ["id"]
           },
         ]
