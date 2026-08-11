@@ -9,7 +9,10 @@ import {
   ClipboardList,
   FolderKanban,
   GitCompare,
+  Inbox,
   LayoutDashboard,
+  PieChart,
+
   LogOut,
   Menu,
   Settings,
