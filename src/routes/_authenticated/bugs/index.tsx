@@ -422,6 +422,7 @@ function BugsPage() {
   );
   /** Server-side match count so paging reflects all pages, not just this one. */
   const totalCount = bugPage?.count ?? rows.length;
+  const aging = useMemo(() => slaSummary(rows), [rows]);
 
   useEffect(() => {
     const visibleIds = new Set(rows.map((bug) => bug.id));
