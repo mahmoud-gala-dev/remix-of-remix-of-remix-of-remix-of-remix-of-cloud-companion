@@ -208,6 +208,42 @@ function ReportsPage() {
     window.print();
   };
 
+  const slaRows = useMemo(
+    () =>
+      bugs
+        .map((bug) => ({ bug, state: slaState(bug) }))
+        .filter((row) => row.state === "breached" || row.state === "at-risk")
+        .sort(
+          (a, b) => new Date(a.bug.created_at).getTime() - new Date(b.bug.created_at).getTime(),
+        )
+        .slice(0, 10),
+    [bugs],
+  );
+  const aging = useMemo(() => slaSummary(bugs), [bugs]);
+
+  const slaScan = useMutation({
+    mutationFn: runSlaBreachScan,
+    onSuccess: (result) =>
+      toast.success(
+        `SLA check done: ${result.breached_bugs} breached bug(s), ${result.notifications_created} new alert(s).`,
+      ),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const exportSlaReport = () => {
+    const csv = toCsv(slaRows, [
+      { header: "Bug", value: (row) => row.bug.bug_id },
+      { header: "Title", value: (row) => row.bug.title },
+      { header: "Priority", value: (row) => row.bug.priority },
+      { header: "Status", value: (row) => row.bug.status },
+      { header: "SLA State", value: (row) => row.state },
+      { header: "SLA", value: (row) => slaLabel(row.bug) },
+      { header: "Created At", value: (row) => row.bug.created_at },
+    ]);
+    downloadCsv(datedCsvFilename("sla-aging-report"), csv);
+  };
+
+
   const isLoading =
     bugsQuery.isLoading ||
     projectsQuery.isLoading ||
