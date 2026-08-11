@@ -94,12 +94,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { to: "/settings", key: "mobile.more", icon: Settings },
   ] as const;
 
-  const navItems = [
+  const navItems: readonly { to: string; key: TranslationKey; icon: typeof Bug }[] = [
     ...baseNav,
     ...(user?.role === "admin"
       ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
       : []),
     { to: "/settings", key: "nav.settings", icon: Settings },
+
   ];
 
 
