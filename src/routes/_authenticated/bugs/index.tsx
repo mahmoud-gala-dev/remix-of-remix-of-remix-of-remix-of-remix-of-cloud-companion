@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
 import {
   AlertTriangle,
   BugIcon,
@@ -80,6 +79,8 @@ import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
+import { SlaBadge } from "@/components/bugs/SlaBadge";
+import { slaSummary } from "@/lib/sla";
 import {
   deleteSavedFilter,
   readSavedFilters,
@@ -421,6 +422,7 @@ function BugsPage() {
   );
   /** Server-side match count so paging reflects all pages, not just this one. */
   const totalCount = bugPage?.count ?? rows.length;
+  const aging = useMemo(() => slaSummary(rows), [rows]);
 
   useEffect(() => {
     const visibleIds = new Set(rows.map((bug) => bug.id));
@@ -558,6 +560,8 @@ function BugsPage() {
       try {
         setImporting(true);
         const bstr = evt.target?.result;
+        // Loaded on demand so the ~700 kB spreadsheet parser stays out of the initial bundle.
+        const XLSX = await import("xlsx");
         const workbook = XLSX.read(bstr, { type: "binary" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Empty workbook");
@@ -945,6 +949,24 @@ function BugsPage() {
           </div>
         )}
 
+        {/* SLA aging summary for the bugs currently in view */}
+        {!isLoading && (aging.breached > 0 || aging.atRisk > 0) && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm">
+            <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+            <span className="text-muted-foreground">SLA aging on this page:</span>
+            {aging.breached > 0 && (
+              <Badge variant="outline" className="border-destructive/40 text-destructive">
+                {aging.breached} overdue
+              </Badge>
+            )}
+            {aging.atRisk > 0 && (
+              <Badge variant="outline" className="border-amber-500/40 text-amber-600">
+                {aging.atRisk} at risk
+              </Badge>
+            )}
+          </div>
+        )}
+
         {view === "board" ? (
           <BugKanbanBoard
             rows={rows}
@@ -1003,14 +1025,17 @@ function BugsPage() {
                           {bug.bug_id}
                         </Link>
                       </TableCell>
-                      <TableCell className="max-w-[280px] truncate">
-                        <Link
-                          to="/bugs/$id"
-                          params={{ id: String(bug.id) }}
-                          className="hover:underline"
-                        >
-                          {bug.title}
-                        </Link>
+                      <TableCell className="max-w-[280px]">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to="/bugs/$id"
+                            params={{ id: String(bug.id) }}
+                            className="truncate hover:underline"
+                          >
+                            {bug.title}
+                          </Link>
+                          <SlaBadge bug={bug} />
+                        </div>
                       </TableCell>
                       <TableCell>{bug.module}</TableCell>
                       <TableCell>
@@ -1080,7 +1105,10 @@ function BugsPage() {
                         {bug.priority}
                       </Badge>
                     </div>
-                    <p className="line-clamp-2 text-sm font-medium">{bug.title}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="line-clamp-2 text-sm font-medium">{bug.title}</p>
+                      <SlaBadge bug={bug} />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {bug.module} ·{" "}
                       {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : "Unassigned"}

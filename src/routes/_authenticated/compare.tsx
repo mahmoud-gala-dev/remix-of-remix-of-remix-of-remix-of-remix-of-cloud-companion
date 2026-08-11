@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import * as XLSX from "xlsx";
 import { FileSpreadsheet, GitCompare, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -46,6 +45,8 @@ const MAX_BYTES = 10 * 1024 * 1024;
 async function readSheet(file: File): Promise<Sheet> {
   if (file.size > MAX_BYTES) throw new Error("File must be smaller than 10 MB");
   const buffer = await file.arrayBuffer();
+  // Loaded on demand so the spreadsheet parser is not part of the initial bundle.
+  const XLSX = await import("xlsx");
   const wb = XLSX.read(buffer, { type: "array" });
   const first = wb.SheetNames[0];
   const worksheet = first ? wb.Sheets[first] : undefined;

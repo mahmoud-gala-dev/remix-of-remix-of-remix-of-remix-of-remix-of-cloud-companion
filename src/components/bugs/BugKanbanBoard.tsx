@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { BUG_STATUSES, friendlyDbError, priorityTone, type BugListRow } from "@/lib/api";
 import { canChangeBugStatus } from "@/lib/permissions";
+import { SlaBadge } from "@/components/bugs/SlaBadge";
 import { cn } from "@/lib/utils";
 
 type BoardUser = { id?: string | null; role?: string | null } | null | undefined;
@@ -144,6 +145,9 @@ export function BugKanbanBoard({
                     >
                       {bug.title}
                     </Link>
+                    <div className="mt-1.5">
+                      <SlaBadge bug={bug} />
+                    </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <Badge variant="outline" className={priorityTone(bug.priority)}>
                         {bug.priority}
