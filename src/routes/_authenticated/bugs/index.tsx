@@ -79,6 +79,8 @@ import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
+import { SlaBadge } from "@/components/bugs/SlaBadge";
+import { slaSummary } from "@/lib/sla";
 import {
   deleteSavedFilter,
   readSavedFilters,
