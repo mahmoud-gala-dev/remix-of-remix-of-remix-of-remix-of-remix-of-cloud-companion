@@ -379,6 +379,7 @@ function BugsPage() {
   const [page, setPage] = useState(1);
   const [importing, setImporting] = useState(false);
   const [showStats, setShowStats] = useState(true);
+  const [view, setView] = useState<"table" | "board">("table");
   const [savedFilterName, setSavedFilterName] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter<BugFilterState>[]>(() =>
     readSavedFilters<BugFilterState>(BUG_FILTERS_KEY),
