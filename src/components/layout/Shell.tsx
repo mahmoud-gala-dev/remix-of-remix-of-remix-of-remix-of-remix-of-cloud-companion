@@ -49,10 +49,12 @@ const baseNav = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
+
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["notifications", "unread", user?.id],
