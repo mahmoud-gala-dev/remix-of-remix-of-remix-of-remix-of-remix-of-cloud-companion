@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { fetchActivity, timeAgo, type ActivityItem } from "@/lib/activity";
 import { fetchProfiles } from "@/lib/api";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => ({
@@ -32,13 +33,14 @@ export const Route = createFileRoute("/_authenticated/activity")({
   notFoundComponent: () => <RouteNotFound label="activity feed" />,
 });
 
-const kindMeta: Record<ActivityItem["kind"], { label: string; icon: typeof Bug }> = {
-  history: { label: "Bug update", icon: Bug },
-  comment: { label: "Comment", icon: MessageSquare },
-  chat: { label: "Chat", icon: MessagesSquare },
+const kindMeta: Record<ActivityItem["kind"], { labelKey: TranslationKey; icon: typeof Bug }> = {
+  history: { labelKey: "activity.kind.history", icon: Bug },
+  comment: { labelKey: "activity.kind.comment", icon: MessageSquare },
+  chat: { labelKey: "activity.kind.chat", icon: MessagesSquare },
 };
 
 function ActivityPage() {
+  const { t } = useI18n();
   const {
     data: items,
     isLoading,
@@ -53,7 +55,7 @@ function ActivityPage() {
 
   const { data: profiles } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
   const nameFor = (userId: string | null) =>
-    (userId ? profiles?.find((p) => p.id === userId)?.username : null) ?? "Someone";
+    (userId ? profiles?.find((p) => p.id === userId)?.username : null) ?? t("common.someone");
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -62,10 +64,10 @@ function ActivityPage() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" aria-hidden="true" />
-              Activity feed
+              {t("activity.title")}
             </CardTitle>
             <CardDescription>
-              Bug updates, comments and chat messages you have access to, newest first.
+              {t("activity.description")}
             </CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
@@ -73,7 +75,7 @@ function ActivityPage() {
               className={`me-1.5 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            Refresh
+            {t("common.refresh")}
           </Button>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -91,7 +93,7 @@ function ActivityPage() {
 
           {!isLoading && !error && (items ?? []).length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              Nothing has happened yet. Activity appears once bugs are updated or messages are sent.
+              {t("activity.empty")}
             </p>
           )}
 
@@ -110,7 +112,7 @@ function ActivityPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium">{nameFor(item.userId)}</span>
                     <Badge variant="outline" className="text-[10px]">
-                      {meta.label}
+                      {t(meta.labelKey)}
                     </Badge>
                     <span className="text-xs text-muted-foreground">{timeAgo(item.createdAt)}</span>
                   </div>
@@ -126,12 +128,12 @@ function ActivityPage() {
                       params={{ id: String(item.bugId) }}
                       className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
                     >
-                      Open bug
+                      {t("activity.openBug")}
                     </Link>
                   )}
                   {item.projectId !== null && (
                     <Link to="/chat" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
-                      Open chat
+                      {t("activity.openChat")}
                     </Link>
                   )}
                 </div>

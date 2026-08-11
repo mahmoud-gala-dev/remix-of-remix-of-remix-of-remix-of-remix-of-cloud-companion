@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Crown, Timer, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { isMonitorRole, isStaffRole } from "@/lib/permissions";
 import { fetchProfiles, fetchUserRoleMap } from "@/lib/api";
 import { fetchResolutionAnalytics, formatDuration } from "@/lib/bug-time";
@@ -41,6 +42,7 @@ function canSeeEveryone(role: string | null | undefined) {
 
 function ResolutionTimesPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const seeAll = canSeeEveryone(user?.role);
 
   const analytics = useQuery({
@@ -85,19 +87,19 @@ function ResolutionTimesPage() {
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Timer className="h-6 w-6" />
-          Resolution Times
+          {t("resolution.title")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {seeAll
-            ? "Total time developers logged while fixing errors, ranked from the highest."
-            : "Your own logged resolution time. Use the timer on a bug page to record work."}
+            ? t("resolution.subtitleAll")
+            : t("resolution.subtitleOwn")}
         </p>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-border/60">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total logged</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("resolution.totalLogged")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="font-mono text-2xl font-semibold tabular-nums">
@@ -108,7 +110,7 @@ function ResolutionTimesPage() {
         <Card className="border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Developers tracked
+              {t("resolution.developersTracked")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -119,7 +121,7 @@ function ResolutionTimesPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
               <Crown className="h-4 w-4" />
-              Highest time
+              {t("resolution.highestTime")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -135,7 +137,7 @@ function ResolutionTimesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="h-4 w-4" />
-            Developer leaderboard
+            {t("resolution.leaderboard")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -143,7 +145,7 @@ function ResolutionTimesPage() {
             <Skeleton className="h-40 w-full" />
           ) : leaderboard.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No resolution time logged yet.
+              {t("resolution.empty")}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -151,10 +153,10 @@ function ResolutionTimesPage() {
                 <thead className="text-start text-muted-foreground">
                   <tr className="border-b border-border/60">
                     <th className="py-2 font-medium">#</th>
-                    <th className="py-2 font-medium">Developer</th>
-                    <th className="py-2 font-medium">Role</th>
-                    <th className="py-2 font-medium">Bugs</th>
-                    <th className="py-2 text-end font-medium">Total time</th>
+                    <th className="py-2 font-medium">{t("resolution.col.developer")}</th>
+                    <th className="py-2 font-medium">{t("resolution.col.role")}</th>
+                    <th className="py-2 font-medium">{t("resolution.col.bugs")}</th>
+                    <th className="py-2 text-end font-medium">{t("resolution.col.totalTime")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -185,23 +187,23 @@ function ResolutionTimesPage() {
 
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle className="text-base">Per-bug breakdown</CardTitle>
+          <CardTitle className="text-base">{t("resolution.perBug")}</CardTitle>
         </CardHeader>
         <CardContent>
           {analytics.isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : rows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Nothing logged yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{t("resolution.perBugEmpty")}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-start text-muted-foreground">
                   <tr className="border-b border-border/60">
-                    <th className="py-2 font-medium">Bug</th>
-                    <th className="py-2 font-medium">Title</th>
-                    <th className="py-2 font-medium">Module</th>
-                    <th className="py-2 font-medium">Developer</th>
-                    <th className="py-2 text-end font-medium">Time</th>
+                    <th className="py-2 font-medium">{t("resolution.col.bug")}</th>
+                    <th className="py-2 font-medium">{t("resolution.col.title")}</th>
+                    <th className="py-2 font-medium">{t("resolution.col.module")}</th>
+                    <th className="py-2 font-medium">{t("resolution.col.developer")}</th>
+                    <th className="py-2 text-end font-medium">{t("resolution.col.time")}</th>
                   </tr>
                 </thead>
                 <tbody>
