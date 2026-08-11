@@ -415,7 +415,8 @@ function BugsPage() {
     () => (rawRows ?? []).filter((bug) => canViewBug(bug, user)),
     [rawRows, user],
   );
-  const totalCount = rows.length;
+  /** Server-side match count so paging reflects all pages, not just this one. */
+  const totalCount = bugPage?.count ?? rows.length;
 
   useEffect(() => {
     const visibleIds = new Set(rows.map((bug) => bug.id));
