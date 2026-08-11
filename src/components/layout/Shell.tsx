@@ -32,18 +32,19 @@ import { fetchChatActivity, unreadByProject } from "@/lib/chat";
 import { useUserAvatar } from "@/context/AvatarContext";
 
 const baseNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/my-work", label: "My Work", icon: Inbox },
-  { to: "/bugs", label: "Bugs", icon: Bug },
-  { to: "/compare", label: "Compare Excel", icon: GitCompare },
-  { to: "/tasks", label: "Priority Tasks", icon: ClipboardList },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/chat", label: "Team Chat", icon: MessagesSquare },
-  { to: "/activity", label: "Activity Feed", icon: Activity },
-  { to: "/resolution-times", label: "Resolution Times", icon: Timer },
-  { to: "/analytics", label: "Analytics", icon: PieChart },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-];
+  { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/my-work", key: "nav.myWork", icon: Inbox },
+  { to: "/bugs", key: "nav.bugs", icon: Bug },
+  { to: "/compare", key: "nav.compare", icon: GitCompare },
+  { to: "/tasks", key: "nav.tasks", icon: ClipboardList },
+  { to: "/projects", key: "nav.projects", icon: FolderKanban },
+  { to: "/chat", key: "nav.chat", icon: MessagesSquare },
+  { to: "/activity", key: "nav.activity", icon: Activity },
+  { to: "/resolution-times", key: "nav.resolutionTimes", icon: Timer },
+  { to: "/analytics", key: "nav.analytics", icon: PieChart },
+  { to: "/reports", key: "nav.reports", icon: BarChart3 },
+] as const;
+
 
 
 export function Shell({ children }: { children: React.ReactNode }) {
