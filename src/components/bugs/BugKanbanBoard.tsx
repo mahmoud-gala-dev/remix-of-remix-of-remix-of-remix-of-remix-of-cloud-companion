@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { BUG_STATUSES, friendlyDbError, priorityTone, type BugListRow } from "@/lib/api";
 import { canChangeBugStatus } from "@/lib/permissions";
+import { SlaBadge } from "@/components/bugs/SlaBadge";
 import { cn } from "@/lib/utils";
 
 type BoardUser = { id?: string | null; role?: string | null } | null | undefined;
