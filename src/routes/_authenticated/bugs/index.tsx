@@ -11,6 +11,8 @@ import {
   CircleDashed,
   Download,
   FileUp,
+  KanbanSquare,
+  List,
   Plus,
   RefreshCw,
   Save,
