@@ -18,10 +18,13 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
+import { fetchChatActivity, unreadByProject } from "@/lib/chat";
 import { useUserAvatar } from "@/context/AvatarContext";
 
 const baseNav = [
@@ -56,6 +59,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
     },
   });
 
+  const { data: chatActivity = [] } = useQuery({
+    queryKey: ["chat-activity"],
+    enabled: !!user,
+    refetchInterval: 30_000,
+    queryFn: () => fetchChatActivity(),
+  });
+
+  const chatUnread = Object.values(unreadByProject(chatActivity, user?.id)).reduce(
+    (total, count) => total + count,
+    0,
+  );
+
   const mobileTabs = [
     { to: "/dashboard", label: "Home", icon: LayoutDashboard },
     { to: "/bugs", label: "Bugs", icon: Bug },
@@ -82,6 +97,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+        const badgeCount = item.to === "/chat" ? chatUnread : 0;
         return (
           <Link
             key={item.to}
@@ -96,11 +112,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <item.icon className="mr-3 h-5 w-5" aria-hidden="true" />
             {item.label}
+            {badgeCount > 0 && !isActive && (
+              <Badge className="ml-auto h-5 min-w-5 justify-center px-1 text-[10px]">
+                {badgeCount > 99 ? "99+" : badgeCount}
+              </Badge>
+            )}
           </Link>
         );
       })}
     </nav>
   );
+
 
   const { avatarUrl } = useUserAvatar();
 
@@ -158,6 +180,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="text-lg font-bold">ElectroPI</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <GlobalSearch />
             <Link
               to="/notifications"
               className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -183,6 +206,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {mobileTabs.map((item) => {
             const isActive =
               location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+            const showDot = item.to === "/chat" && chatUnread > 0 && !isActive;
             return (
               <Link
                 key={item.to}
@@ -192,12 +216,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                <item.icon className="h-5 w-5" aria-hidden="true" />
+                <span className="relative">
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  {showDot && (
+                    <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full border border-card bg-destructive" />
+                  )}
+                </span>
                 {item.label}
               </Link>
             );
           })}
         </nav>
+
       </div>
     </div>
   );

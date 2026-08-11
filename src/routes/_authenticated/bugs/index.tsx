@@ -11,6 +11,8 @@ import {
   CircleDashed,
   Download,
   FileUp,
+  KanbanSquare,
+  List,
   Plus,
   RefreshCw,
   Save,
@@ -77,6 +79,7 @@ import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
+import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
 import {
   deleteSavedFilter,
   readSavedFilters,
@@ -376,6 +379,7 @@ function BugsPage() {
   const [page, setPage] = useState(1);
   const [importing, setImporting] = useState(false);
   const [showStats, setShowStats] = useState(true);
+  const [view, setView] = useState<"table" | "board">("table");
   const [savedFilterName, setSavedFilterName] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter<BugFilterState>[]>(() =>
     readSavedFilters<BugFilterState>(BUG_FILTERS_KEY),
@@ -415,7 +419,8 @@ function BugsPage() {
     () => (rawRows ?? []).filter((bug) => canViewBug(bug, user)),
     [rawRows, user],
   );
-  const totalCount = rows.length;
+  /** Server-side match count so paging reflects all pages, not just this one. */
+  const totalCount = bugPage?.count ?? rows.length;
 
   useEffect(() => {
     const visibleIds = new Set(rows.map((bug) => bug.id));
@@ -628,6 +633,33 @@ function BugsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* View switcher: table vs kanban board */}
+          <div
+            className="inline-flex rounded-md border border-border p-0.5"
+            role="group"
+            aria-label="Bug view"
+          >
+            <Button
+              variant={view === "table" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              className="h-8"
+            >
+              <List className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              List
+            </Button>
+            <Button
+              variant={view === "board" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "board"}
+              onClick={() => setView("board")}
+              className="h-8"
+            >
+              <KanbanSquare className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Board
+            </Button>
+          </div>
           {/* Stats toggle */}
           <Button
             variant="ghost"
@@ -913,7 +945,14 @@ function BugsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {view === "board" ? (
+          <BugKanbanBoard
+            rows={rows}
+            isLoading={isLoading}
+            user={user}
+            profileMap={profileMap}
+          />
+        ) : isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
