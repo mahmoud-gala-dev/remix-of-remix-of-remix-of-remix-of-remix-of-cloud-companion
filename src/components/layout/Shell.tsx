@@ -34,6 +34,7 @@ const baseNav = [
   { to: "/tasks", label: "Priority Tasks", icon: ClipboardList },
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/chat", label: "Team Chat", icon: MessagesSquare },
+  { to: "/activity", label: "Activity Feed", icon: Activity },
   { to: "/resolution-times", label: "Resolution Times", icon: Timer },
   { to: "/reports", label: "Reports", icon: BarChart3 },
 ];
