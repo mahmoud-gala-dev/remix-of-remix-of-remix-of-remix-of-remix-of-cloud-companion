@@ -81,19 +81,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
   const mobileTabs = [
-    { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { to: "/bugs", label: "Bugs", icon: Bug },
-    { to: "/tasks", label: "Tasks", icon: ClipboardList },
-    { to: "/chat", label: "Chat", icon: MessagesSquare },
-    { to: "/projects", label: "Projects", icon: FolderKanban },
-    { to: "/settings", label: "More", icon: Settings },
-  ];
+    { to: "/dashboard", key: "mobile.home", icon: LayoutDashboard },
+    { to: "/bugs", key: "mobile.bugs", icon: Bug },
+    { to: "/tasks", key: "mobile.tasks", icon: ClipboardList },
+    { to: "/chat", key: "mobile.chat", icon: MessagesSquare },
+    { to: "/projects", key: "mobile.projects", icon: FolderKanban },
+    { to: "/settings", key: "mobile.more", icon: Settings },
+  ] as const;
 
   const navItems = [
     ...baseNav,
-    ...(user?.role === "admin" ? [{ to: "/users", label: "Users", icon: Users }] : []),
-    { to: "/settings", label: "Settings", icon: Settings },
+    ...(user?.role === "admin"
+      ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
+      : []),
+    { to: "/settings", key: "nav.settings", icon: Settings },
   ];
+
 
   const handleLogout = async () => {
     setMobileOpen(false);
