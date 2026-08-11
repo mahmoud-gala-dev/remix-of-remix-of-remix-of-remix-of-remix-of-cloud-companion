@@ -27,7 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
