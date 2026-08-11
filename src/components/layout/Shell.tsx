@@ -9,7 +9,10 @@ import {
   ClipboardList,
   FolderKanban,
   GitCompare,
+  Inbox,
   LayoutDashboard,
+  PieChart,
+
   LogOut,
   Menu,
   Settings,
@@ -30,6 +33,7 @@ import { useUserAvatar } from "@/context/AvatarContext";
 
 const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/my-work", label: "My Work", icon: Inbox },
   { to: "/bugs", label: "Bugs", icon: Bug },
   { to: "/compare", label: "Compare Excel", icon: GitCompare },
   { to: "/tasks", label: "Priority Tasks", icon: ClipboardList },
@@ -37,8 +41,10 @@ const baseNav = [
   { to: "/chat", label: "Team Chat", icon: MessagesSquare },
   { to: "/activity", label: "Activity Feed", icon: Activity },
   { to: "/resolution-times", label: "Resolution Times", icon: Timer },
+  { to: "/analytics", label: "Analytics", icon: PieChart },
   { to: "/reports", label: "Reports", icon: BarChart3 },
 ];
+
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();

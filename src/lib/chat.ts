@@ -18,27 +18,86 @@ export async function fetchProjectMessages(projectId: number): Promise<ProjectMe
   return data ?? [];
 }
 
+export type ChatAttachmentInput = {
+  path: string;
+  name: string;
+  type: string | null;
+};
+
 export async function sendProjectMessage({
   projectId,
   userId,
   content,
+  replyToId = null,
+  attachment = null,
 }: {
   projectId: number;
   userId: string;
   content: string;
+  replyToId?: number | null;
+  attachment?: ChatAttachmentInput | null;
 }) {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message cannot be empty.");
+  if (!trimmed && !attachment) throw new Error("Message cannot be empty.");
   if (trimmed.length > MAX_MESSAGE_LENGTH) {
     throw new Error(`Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.`);
   }
   const { data, error } = await supabase
     .from("project_messages")
-    .insert({ project_id: projectId, user_id: userId, content: trimmed })
+    .insert({
+      project_id: projectId,
+      user_id: userId,
+      content: trimmed || (attachment ? `📎 ${attachment.name}` : ""),
+      reply_to_id: replyToId,
+      attachment_path: attachment?.path ?? null,
+      attachment_name: attachment?.name ?? null,
+      attachment_type: attachment?.type ?? null,
+    })
     .select("*")
     .single();
   if (error) throw new Error(friendlyDbError(error));
   return data;
+}
+
+/** Edits the caller's own message; the database stamps `edited_at`. */
+export async function editProjectMessage(id: number, content: string) {
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error("Message cannot be empty.");
+  if (trimmed.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.`);
+  }
+  const { error } = await supabase
+    .from("project_messages")
+    .update({ content: trimmed })
+    .eq("id", id);
+  if (error) throw new Error(friendlyDbError(error));
+}
+
+export const CHAT_BUCKET = "chat-attachments";
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+/** Uploads one chat file and returns the stored object path. */
+export async function uploadChatAttachment(
+  file: File,
+  { projectId, userId }: { projectId: number; userId: string },
+): Promise<ChatAttachmentInput> {
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Attachments must be 10 MB or smaller.");
+  }
+  const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(-80);
+  const path = `${projectId}/${userId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage
+    .from(CHAT_BUCKET)
+    .upload(path, file, { contentType: file.type || "application/octet-stream" });
+  if (error) throw new Error(error.message);
+  return { path, name: file.name, type: file.type || null };
+}
+
+/** Short-lived signed URL so members can open a private chat file. */
+export async function chatAttachmentUrl(path: string) {
+  const { data, error } = await supabase.storage.from(CHAT_BUCKET).createSignedUrl(path, 3600);
+  if (error) throw new Error(error.message);
+  return data.signedUrl;
 }
 
 export async function deleteProjectMessage(id: number) {
@@ -168,3 +227,27 @@ export function unreadByProject(
   return counts;
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Typing indicator
+ * ------------------------------------------------------------------ */
+
+/** Keeps only typing events newer than `windowMs`, excluding the current user. */
+export function activeTypists(
+  events: Record<string, { username: string; at: number }>,
+  currentUserId: string | null | undefined,
+  now = Date.now(),
+  windowMs = 4000,
+): string[] {
+  return Object.entries(events)
+    .filter(([id, event]) => id !== currentUserId && now - event.at < windowMs)
+    .map(([, event]) => event.username);
+}
+
+/** "Sara is typing…" / "Sara and Omar are typing…" / "3 people are typing…" */
+export function typingLabel(names: string[]): string | null {
+  if (names.length === 0) return null;
+  if (names.length === 1) return `${names[0]} is typing…`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
+  return `${names.length} people are typing…`;
+}
