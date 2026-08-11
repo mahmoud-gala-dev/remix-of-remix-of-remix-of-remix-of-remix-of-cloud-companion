@@ -238,7 +238,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full border border-card bg-destructive" />
                   )}
                 </span>
-                {item.label}
+                {t(item.key)}
               </Link>
             );
           })}
