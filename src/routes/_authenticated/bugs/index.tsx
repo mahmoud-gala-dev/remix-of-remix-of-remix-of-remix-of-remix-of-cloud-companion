@@ -558,6 +558,8 @@ function BugsPage() {
       try {
         setImporting(true);
         const bstr = evt.target?.result;
+        // Loaded on demand so the ~700 kB spreadsheet parser stays out of the initial bundle.
+        const XLSX = await import("xlsx");
         const workbook = XLSX.read(bstr, { type: "binary" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Empty workbook");
