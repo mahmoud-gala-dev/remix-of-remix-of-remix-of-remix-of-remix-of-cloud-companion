@@ -945,7 +945,14 @@ function BugsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {view === "board" ? (
+          <BugKanbanBoard
+            rows={rows}
+            isLoading={isLoading}
+            user={user}
+            profileMap={profileMap}
+          />
+        ) : isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
