@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -359,9 +359,8 @@ function ReportsPage() {
         </div>
         {slaRows.length === 0 ? (
           <EmptyPanel
-            icon={ShieldAlert}
             title="Everything inside SLA"
-            description="No open bug is close to breaching its resolution target."
+            detail="No open bug is close to breaching its resolution target."
           />
         ) : (
           <ul className="space-y-2">
