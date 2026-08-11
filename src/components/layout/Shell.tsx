@@ -59,6 +59,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
     },
   });
 
+  const { data: chatActivity = [] } = useQuery({
+    queryKey: ["chat-activity"],
+    enabled: !!user,
+    refetchInterval: 30_000,
+    queryFn: () => fetchChatActivity(),
+  });
+
+  const chatUnread = Object.values(unreadByProject(chatActivity, user?.id)).reduce(
+    (total, count) => total + count,
+    0,
+  );
+
   const mobileTabs = [
     { to: "/dashboard", label: "Home", icon: LayoutDashboard },
     { to: "/bugs", label: "Bugs", icon: Bug },
@@ -85,6 +97,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+        const badgeCount = item.to === "/chat" ? chatUnread : 0;
         return (
           <Link
             key={item.to}
@@ -99,11 +112,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <item.icon className="mr-3 h-5 w-5" aria-hidden="true" />
             {item.label}
+            {badgeCount > 0 && !isActive && (
+              <Badge className="ml-auto h-5 min-w-5 justify-center px-1 text-[10px]">
+                {badgeCount > 99 ? "99+" : badgeCount}
+              </Badge>
+            )}
           </Link>
         );
       })}
     </nav>
   );
+
 
   const { avatarUrl } = useUserAvatar();
 
