@@ -180,6 +180,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="text-lg font-bold">ElectroPI</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <GlobalSearch />
             <Link
               to="/notifications"
               className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -205,6 +206,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {mobileTabs.map((item) => {
             const isActive =
               location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+            const showDot = item.to === "/chat" && chatUnread > 0 && !isActive;
             return (
               <Link
                 key={item.to}
@@ -214,12 +216,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                <item.icon className="h-5 w-5" aria-hidden="true" />
+                <span className="relative">
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  {showDot && (
+                    <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full border border-card bg-destructive" />
+                  )}
+                </span>
                 {item.label}
               </Link>
             );
           })}
         </nav>
+
       </div>
     </div>
   );
