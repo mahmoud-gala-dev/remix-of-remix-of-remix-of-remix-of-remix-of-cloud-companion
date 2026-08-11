@@ -52,7 +52,7 @@ const baseNav = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, direction } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -171,9 +171,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-background">
-      <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <aside className="hidden w-64 flex-col border-e border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-          <ShieldAlert className="mr-2 h-6 w-6 text-primary" aria-hidden="true" />
+          <ShieldAlert className="me-2 h-6 w-6 text-primary" aria-hidden="true" />
           <span className="text-lg font-bold tracking-tight">ElectroPI</span>
         </div>
         {navList}
@@ -230,7 +230,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Mobile bottom tab bar — native app feel on small screens */}
         <nav
           className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-          aria-label="Primary mobile"
+          aria-label={t("shell.primaryMobile")}
         >
           {mobileTabs.map((item) => {
             const isActive =
