@@ -1004,14 +1004,17 @@ function BugsPage() {
                           {bug.bug_id}
                         </Link>
                       </TableCell>
-                      <TableCell className="max-w-[280px] truncate">
-                        <Link
-                          to="/bugs/$id"
-                          params={{ id: String(bug.id) }}
-                          className="hover:underline"
-                        >
-                          {bug.title}
-                        </Link>
+                      <TableCell className="max-w-[280px]">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to="/bugs/$id"
+                            params={{ id: String(bug.id) }}
+                            className="truncate hover:underline"
+                          >
+                            {bug.title}
+                          </Link>
+                          <SlaBadge bug={bug} />
+                        </div>
                       </TableCell>
                       <TableCell>{bug.module}</TableCell>
                       <TableCell>
