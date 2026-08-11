@@ -18,10 +18,13 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
+import { fetchChatActivity, unreadByProject } from "@/lib/chat";
 import { useUserAvatar } from "@/context/AvatarContext";
 
 const baseNav = [
