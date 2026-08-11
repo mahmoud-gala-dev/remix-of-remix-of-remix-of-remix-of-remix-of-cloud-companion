@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 import { fetchDashboardStats, fetchRecentBugs, type DashboardScope } from "@/lib/api";
 import {
   BugLink,
@@ -78,36 +79,39 @@ const SEVERITY_CHART_COLORS: Record<string, string> = {
   Minor: "var(--chart-4)",
 };
 
-const roleCopy: Record<string, { kicker: string; title: string; detail: string }> = {
+const roleCopyKeys: Record<
+  string,
+  { kicker: TranslationKey; title: TranslationKey; detail: TranslationKey }
+> = {
   tester: {
-    kicker: "Test signal / intake",
-    title: "Your defect pulse",
-    detail: "A read on the bugs you've reported and how they're moving through the queue.",
+    kicker: "dash.role.tester.kicker",
+    title: "dash.role.tester.title",
+    detail: "dash.role.tester.detail",
   },
   developer: {
-    kicker: "Build signal / ownership",
-    title: "Your delivery queue",
-    detail: "A focused view of bugs assigned to you across status, priority and module.",
+    kicker: "dash.role.developer.kicker",
+    title: "dash.role.developer.title",
+    detail: "dash.role.developer.detail",
   },
   admin: {
-    kicker: "Platform signal / oversight",
-    title: "Quality operations",
-    detail: "A platform-wide view of defect flow, priority mix and module health.",
+    kicker: "dash.role.admin.kicker",
+    title: "dash.role.admin.title",
+    detail: "dash.role.admin.detail",
   },
   supervisor: {
-    kicker: "Team signal / oversight",
-    title: "Quality operations",
-    detail: "Monitor defect flow and team throughput across the delivery surface.",
+    kicker: "dash.role.supervisor.kicker",
+    title: "dash.role.supervisor.title",
+    detail: "dash.role.supervisor.detail",
   },
   auditor: {
-    kicker: "Audit signal / monitor",
-    title: "Resolution oversight",
-    detail: "Review defect flow, time-to-resolution evidence and role-scoped activity.",
+    kicker: "dash.role.auditor.kicker",
+    title: "dash.role.auditor.title",
+    detail: "dash.role.auditor.detail",
   },
   monitor: {
-    kicker: "Audit signal / monitor",
-    title: "Resolution oversight",
-    detail: "Review defect flow, time-to-resolution evidence and role-scoped activity.",
+    kicker: "dash.role.monitor.kicker",
+    title: "dash.role.monitor.title",
+    detail: "dash.role.monitor.detail",
   },
 };
 
@@ -134,14 +138,15 @@ function ChartTooltip({
 }
 
 function DashboardError() {
+  const { t } = useI18n();
   return (
     <div className="mx-auto flex max-w-7xl min-h-64 flex-col items-center justify-center rounded-xl border border-destructive/30 bg-card text-center">
       <div className="grid h-10 w-10 place-items-center rounded-full bg-destructive/10 text-destructive">
         <ShieldAlert className="h-5 w-5" />
       </div>
-      <h2 className="mt-4 text-lg font-semibold">Dashboard signal unavailable</h2>
+      <h2 className="mt-4 text-lg font-semibold">{t("dash.error.title")}</h2>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        We could not load the latest bug data. Try again in a moment.
+        {t("dash.error.detail")}
       </p>
     </div>
   );
@@ -149,8 +154,9 @@ function DashboardError() {
 
 function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const role = (user?.role ?? "tester").toLowerCase();
-  const copy = roleCopy[role] ?? roleCopy["tester"]!;
+  const copyKeys = roleCopyKeys[role] ?? roleCopyKeys["tester"]!;
   const scope: DashboardScope =
     role === "developer" ? "assigned" : role === "tester" ? "reported" : "all";
 
@@ -200,44 +206,49 @@ function DashboardPage() {
       <header className="border-b border-border/70 pb-6">
         <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          {copy.kicker}
+          {t(copyKeys.kicker)}
         </div>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          {copy.title}
+          {t(copyKeys.title)}
           {user?.username ? <span className="text-muted-foreground">, {user.username}</span> : null}
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          {copy.detail}
+          {t(copyKeys.detail)}
         </p>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Dashboard metrics">
-        <KpiCard label="Total Bugs" value={baseStats.total} sub="tracked defects" icon={BugIcon} />
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label={t("dash.metrics")}>
         <KpiCard
-          label="Open"
+          label={t("dash.kpi.total")}
+          value={baseStats.total}
+          sub={t("dash.kpi.totalSub")}
+          icon={BugIcon}
+        />
+        <KpiCard
+          label={t("dash.kpi.open")}
           value={baseStats.by_status["Open"] ?? 0}
-          sub="awaiting triage"
+          sub={t("dash.kpi.openSub")}
           icon={CircleDashed}
           toneClass="text-destructive"
         />
         <KpiCard
-          label="In Progress"
+          label={t("dash.kpi.inProgress")}
           value={baseStats.by_status["In Progress"] ?? 0}
-          sub="being worked on"
+          sub={t("dash.kpi.inProgressSub")}
           icon={Activity}
           toneClass="text-info"
         />
         <KpiCard
-          label="Fixed / Closed"
+          label={t("dash.kpi.resolved")}
           value={resolved}
-          sub={`${resolutionRate}% resolution rate`}
+          sub={t("dash.kpi.resolvedSub", { rate: resolutionRate })}
           icon={CheckCircle2}
           toneClass="text-success"
         />
         <KpiCard
-          label="Critical"
+          label={t("dash.kpi.critical")}
           value={critical}
-          sub="critical priority or blocker severity"
+          sub={t("dash.kpi.criticalSub")}
           icon={AlertTriangle}
           toneClass="text-destructive"
         />
@@ -245,15 +256,15 @@ function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="lg:col-span-3">
-          <SectionCard title="Resolved vs Remaining" icon={Target}>
+          <SectionCard title={t("dash.card.resolvedVsRemaining")} icon={Target}>
             {baseStats.total ? (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={[
-                        { name: "Resolved", value: resolved },
-                        { name: "Remaining", value: remaining },
+                        { name: t("dash.legend.resolved"), value: resolved },
+                        { name: t("dash.legend.remaining"), value: remaining },
                       ]}
                       cx="50%"
                       cy="50%"
@@ -273,15 +284,15 @@ function DashboardPage() {
               </div>
             ) : (
               <EmptyPanel
-                title="No data yet"
-                detail="Bugs will populate this chart as they are reported."
+                title={t("dash.empty.noData")}
+                detail={t("dash.empty.chart")}
               />
             )}
           </SectionCard>
         </div>
 
         <div className="lg:col-span-4">
-          <SectionCard title="Bugs by Status" icon={Layers}>
+          <SectionCard title={t("dash.card.byStatus")} icon={Layers}>
             {statusData.length ? (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -309,8 +320,8 @@ function DashboardPage() {
               </div>
             ) : (
               <EmptyPanel
-                title="No data yet"
-                detail="Bugs will populate this chart as they are reported."
+                title={t("dash.empty.noData")}
+                detail={t("dash.empty.chart")}
               />
             )}
           </SectionCard>
@@ -318,7 +329,7 @@ function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <SectionCard title="By Priority" icon={AlertTriangle}>
+        <SectionCard title={t("dash.card.byPriority")} icon={AlertTriangle}>
           {priorityData.length ? (
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
@@ -355,11 +366,11 @@ function DashboardPage() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyPanel title="No data yet" detail="Priority breakdown will show up here." />
+            <EmptyPanel title={t("dash.empty.noData")} detail={t("dash.empty.priority")} />
           )}
         </SectionCard>
 
-        <SectionCard title="By Severity" icon={AlertTriangle}>
+        <SectionCard title={t("dash.card.bySeverity")} icon={AlertTriangle}>
           {severityData.length ? (
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
@@ -396,29 +407,29 @@ function DashboardPage() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyPanel title="No data yet" detail="Severity breakdown will show up here." />
+            <EmptyPanel title={t("dash.empty.noData")} detail={t("dash.empty.severity")} />
           )}
         </SectionCard>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard title="Module Breakdown" icon={Layers}>
+        <SectionCard title={t("dash.card.modules")} icon={Layers}>
           {moduleList.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="px-3 py-2 text-start text-xs font-semibold text-muted-foreground">
-                      Module
+                      {t("dash.col.module")}
                     </th>
                     <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      Total
+                      {t("dash.col.total")}
                     </th>
                     <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      Open
+                      {t("dash.col.open")}
                     </th>
                     <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      Resolved
+                      {t("dash.col.resolved")}
                     </th>
                   </tr>
                 </thead>
@@ -453,13 +464,13 @@ function DashboardPage() {
             </div>
           ) : (
             <EmptyPanel
-              title="No modules yet"
-              detail="Module data will appear once bugs are reported."
+              title={t("dash.empty.modulesTitle")}
+              detail={t("dash.empty.modules")}
             />
           )}
         </SectionCard>
 
-        <SectionCard title="Recent Bugs" icon={Activity}>
+        <SectionCard title={t("dash.card.recent")} icon={Activity}>
           {recentBugs.length ? (
             <div className="space-y-1">
               {recentBugs.map((bug) => (
@@ -475,8 +486,8 @@ function DashboardPage() {
             </div>
           ) : (
             <EmptyPanel
-              title="No bugs to show"
-              detail="Recently reported bugs will show up here."
+              title={t("dash.empty.recentTitle")}
+              detail={t("dash.empty.recent")}
             />
           )}
         </SectionCard>
