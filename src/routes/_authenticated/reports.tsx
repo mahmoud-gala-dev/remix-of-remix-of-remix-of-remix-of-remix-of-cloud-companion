@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { slaLabel, slaState, slaSummary, slaTone } from "@/lib/sla";
+import { runSlaBreachScan } from "@/lib/sla-alerts";
+import { useAuth } from "@/lib/auth";
+import { isStaffRole } from "@/lib/permissions";
 import {
   Area,
   AreaChart,
@@ -104,6 +109,8 @@ function ChartTooltip({
 }
 
 function ReportsPage() {
+  const { user } = useAuth();
+  const canRunSlaScan = isStaffRole(user?.role) || user?.role === "monitor";
   const [range, setRange] = useState(30);
   const [reportFilterName, setReportFilterName] = useState("");
   const [savedReportFilters, setSavedReportFilters] = useState<SavedFilter<ReportFilterState>[]>(
@@ -208,6 +215,42 @@ function ReportsPage() {
     window.print();
   };
 
+  const slaRows = useMemo(
+    () =>
+      bugs
+        .map((bug) => ({ bug, state: slaState(bug) }))
+        .filter((row) => row.state === "breached" || row.state === "at-risk")
+        .sort(
+          (a, b) => new Date(a.bug.created_at).getTime() - new Date(b.bug.created_at).getTime(),
+        )
+        .slice(0, 10),
+    [bugs],
+  );
+  const aging = useMemo(() => slaSummary(bugs), [bugs]);
+
+  const slaScan = useMutation({
+    mutationFn: runSlaBreachScan,
+    onSuccess: (result) =>
+      toast.success(
+        `SLA check done: ${result.breached_bugs} breached bug(s), ${result.notifications_created} new alert(s).`,
+      ),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const exportSlaReport = () => {
+    const csv = toCsv(slaRows, [
+      { header: "Bug", value: (row) => row.bug.bug_id },
+      { header: "Title", value: (row) => row.bug.title },
+      { header: "Priority", value: (row) => row.bug.priority },
+      { header: "Status", value: (row) => row.bug.status },
+      { header: "SLA State", value: (row) => row.state },
+      { header: "SLA", value: (row) => slaLabel(row.bug) },
+      { header: "Created At", value: (row) => row.bug.created_at },
+    ]);
+    downloadCsv(datedCsvFilename("sla-aging-report"), csv);
+  };
+
+
   const isLoading =
     bugsQuery.isLoading ||
     projectsQuery.isLoading ||
@@ -279,6 +322,73 @@ function ReportsPage() {
           </Button>
         </div>
       </header>
+
+      <SectionCard
+        title="SLA aging"
+        icon={ShieldAlert}
+        action={
+          <div className="flex items-center gap-2 print:hidden">
+            <Button type="button" variant="outline" size="sm" onClick={exportSlaReport}>
+              <Download className="mr-2 h-4 w-4" />
+              CSV
+            </Button>
+            {canRunSlaScan && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => slaScan.mutate()}
+                disabled={slaScan.isPending}
+              >
+                {slaScan.isPending ? "Checking…" : "Run SLA check"}
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <Badge variant="outline" className="border-destructive/40 text-destructive">
+            {aging.breached} breached
+          </Badge>
+          <Badge variant="outline" className="border-amber-500/40 text-amber-600">
+            {aging.atRisk} at risk
+          </Badge>
+          <span className="text-xs text-muted-foreground">
+            Targets: Critical 8h · High 24h · Medium 72h · Low 168h. Alerts are sent automatically
+            every hour.
+          </span>
+        </div>
+        {slaRows.length === 0 ? (
+          <EmptyPanel
+            title="Everything inside SLA"
+            detail="No open bug is close to breaching its resolution target."
+          />
+        ) : (
+          <ul className="space-y-2">
+            {slaRows.map(({ bug, state }) => (
+              <li
+                key={bug.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <Link
+                    to="/bugs/$id"
+                    params={{ id: String(bug.id) }}
+                    className="truncate text-sm font-medium hover:underline"
+                  >
+                    {bug.bug_id} — {bug.title}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    {bug.priority} · {bug.status}
+                  </p>
+                </div>
+                <Badge variant="outline" className={slaTone(state)}>
+                  {slaLabel(bug)}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Reporting metrics">
         <KpiCard

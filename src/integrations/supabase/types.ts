@@ -784,6 +784,9 @@ export type Database = {
       }
       is_account_active: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      run_sla_breach_scan: { Args: never; Returns: Json }
+      sla_breach_scan: { Args: never; Returns: Json }
+      sla_target_hours: { Args: { _priority: string }; Returns: number }
     }
     Enums: {
       app_role:

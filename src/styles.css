@@ -142,3 +142,40 @@
   background-clip: text;
   color: transparent;
 }
+
+/* Printing / "Export PDF": drop chrome and force readable light output. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  /* Charts and cards keep their borders but lose heavy shadows. */
+  .panel,
+  [class*="shadow"] {
+    box-shadow: none !important;
+  }
+
+  nav,
+  aside,
+  header button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  a[href] {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  section,
+  table,
+  tr {
+    break-inside: avoid;
+  }
+}
