@@ -123,6 +123,12 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  html[dir="rtl"] body {
+    font-family: "IBM Plex Sans Arabic", var(--font-sans);
+    letter-spacing: 0;
+  }
+
+
   h1,
   h2,
   h3 {
