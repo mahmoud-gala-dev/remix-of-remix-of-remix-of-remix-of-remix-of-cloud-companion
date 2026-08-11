@@ -948,6 +948,24 @@ function BugsPage() {
           </div>
         )}
 
+        {/* SLA aging summary for the bugs currently in view */}
+        {!isLoading && (aging.breached > 0 || aging.atRisk > 0) && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm">
+            <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+            <span className="text-muted-foreground">SLA aging on this page:</span>
+            {aging.breached > 0 && (
+              <Badge variant="outline" className="border-destructive/40 text-destructive">
+                {aging.breached} overdue
+              </Badge>
+            )}
+            {aging.atRisk > 0 && (
+              <Badge variant="outline" className="border-amber-500/40 text-amber-600">
+                {aging.atRisk} at risk
+              </Badge>
+            )}
+          </div>
+        )}
+
         {view === "board" ? (
           <BugKanbanBoard
             rows={rows}
