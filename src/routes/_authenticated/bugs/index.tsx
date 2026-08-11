@@ -633,6 +633,33 @@ function BugsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* View switcher: table vs kanban board */}
+          <div
+            className="inline-flex rounded-md border border-border p-0.5"
+            role="group"
+            aria-label="Bug view"
+          >
+            <Button
+              variant={view === "table" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              className="h-8"
+            >
+              <List className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              List
+            </Button>
+            <Button
+              variant={view === "board" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "board"}
+              onClick={() => setView("board")}
+              className="h-8"
+            >
+              <KanbanSquare className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Board
+            </Button>
+          </div>
           {/* Stats toggle */}
           <Button
             variant="ghost"
