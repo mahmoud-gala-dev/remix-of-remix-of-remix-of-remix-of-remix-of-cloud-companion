@@ -135,7 +135,7 @@ export function BugStatsStrip({ bug }: { bug: Bug }) {
           <Progress value={openVsResolved.percentResolved} className="h-2" />
         </div>
 
-        <div className="text-right shrink-0">
+        <div className="text-end shrink-0">
           <span className="inline-flex items-center gap-1 text-xs font-bold text-success bg-success/15 px-2.5 py-1 rounded-full border border-success/30">
             {openVsResolved.percentResolved}% Resolved
           </span>

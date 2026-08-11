@@ -70,7 +70,7 @@ export function AssigneeSelect({
           <span className={selected ? "" : "text-muted-foreground"}>
             {selected?.username ?? "Unassigned"}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[260px] p-0" align="start">
@@ -81,14 +81,14 @@ export function AssigneeSelect({
             value={term}
             onChange={(event) => setTerm(event.target.value)}
             placeholder="Search developers…"
-            className="h-8 pl-7 text-sm"
+            className="h-8 ps-7 text-sm"
           />
         </div>
         <ScrollArea className="max-h-60">
           <div className="p-1">
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
+              className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-start text-sm hover:bg-muted"
               onClick={() => {
                 onChange(null);
                 setOpen(false);
@@ -104,7 +104,7 @@ export function AssigneeSelect({
                 <button
                   key={profile.id}
                   type="button"
-                  className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
+                  className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-start text-sm hover:bg-muted"
                   onClick={() => {
                     onChange(profile.id === UNASSIGNED ? null : profile.id);
                     setOpen(false);

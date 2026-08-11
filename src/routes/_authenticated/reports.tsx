@@ -317,7 +317,7 @@ function ReportsPage() {
             </select>
           )}
           <Button type="button" variant="secondary" size="sm" onClick={exportPdf}>
-            <FileText className="mr-2 h-4 w-4" />
+            <FileText className="me-2 h-4 w-4" />
             PDF
           </Button>
         </div>
@@ -329,7 +329,7 @@ function ReportsPage() {
         action={
           <div className="flex items-center gap-2 print:hidden">
             <Button type="button" variant="outline" size="sm" onClick={exportSlaReport}>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="me-2 h-4 w-4" />
               CSV
             </Button>
             {canRunSlaScan && (
@@ -429,7 +429,7 @@ function ReportsPage() {
             onClick={exportProjectReport}
             disabled={projectRows.length === 0}
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="me-2 h-4 w-4" />
             CSV
           </Button>
         }
@@ -564,7 +564,7 @@ function ReportsPage() {
             onClick={exportAuditReport}
             disabled={!auditRows.length}
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="me-2 h-4 w-4" />
             CSV
           </Button>
         }
@@ -593,7 +593,7 @@ function ReportsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b text-start text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="py-2 font-medium">Bug</th>
                   <th className="py-2 font-medium">Field</th>
                   <th className="py-2 font-medium">Old</th>
@@ -640,7 +640,7 @@ function ReportsPage() {
             onClick={exportAssigneeReport}
             disabled={leaderboard.length === 0}
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="me-2 h-4 w-4" />
             CSV
           </Button>
         }
@@ -649,7 +649,7 @@ function ReportsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b text-start text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="py-2 font-medium">Assignee</th>
                   <th className="py-2 font-medium">Open</th>
                   <th className="py-2 font-medium">Resolved</th>

@@ -54,7 +54,7 @@ export function SetupSteps({
   return (
     <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground space-y-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-foreground">Setup steps</p>
-      <ol className="list-decimal space-y-1.5 pl-4">
+      <ol className="list-decimal space-y-1.5 ps-4">
         {steps.map((step, index) => (
           <li key={index}>{step}</li>
         ))}

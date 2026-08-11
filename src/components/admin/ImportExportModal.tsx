@@ -263,7 +263,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ users, onI
                   </p>
                 </div>
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                  <CheckCircle2 className="mr-1 h-3 w-3" /> Complete
+                  <CheckCircle2 className="me-1 h-3 w-3" /> Complete
                 </span>
               </div>
 

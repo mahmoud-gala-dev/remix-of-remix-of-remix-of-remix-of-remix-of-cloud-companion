@@ -650,7 +650,7 @@ function BugsPage() {
               onClick={() => setView("table")}
               className="h-8"
             >
-              <List className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              <List className="me-1.5 h-4 w-4" aria-hidden="true" />
               List
             </Button>
             <Button
@@ -660,7 +660,7 @@ function BugsPage() {
               onClick={() => setView("board")}
               className="h-8"
             >
-              <KanbanSquare className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              <KanbanSquare className="me-1.5 h-4 w-4" aria-hidden="true" />
               Board
             </Button>
           </div>
@@ -673,12 +673,12 @@ function BugsPage() {
           >
             {showStats ? (
               <>
-                <ChevronUp className="mr-1.5 h-4 w-4" />
+                <ChevronUp className="me-1.5 h-4 w-4" />
                 Hide stats
               </>
             ) : (
               <>
-                <ChevronDown className="mr-1.5 h-4 w-4" />
+                <ChevronDown className="me-1.5 h-4 w-4" />
                 Show stats
               </>
             )}
@@ -689,13 +689,13 @@ function BugsPage() {
             disabled={isLoading || rows.length === 0}
             size="sm"
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="me-2 h-4 w-4" />
             Export CSV
           </Button>
           <label className="cursor-pointer">
             <Button variant="outline" asChild disabled={importing} size="sm">
               <span>
-                <FileUp className="mr-2 h-4 w-4" />
+                <FileUp className="me-2 h-4 w-4" />
                 {importing ? "Importing..." : "Import Excel"}
               </span>
             </Button>
@@ -710,7 +710,7 @@ function BugsPage() {
           {canReport && (
             <Button size="sm" asChild>
               <Link to="/bugs/new">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="me-2 h-4 w-4" />
                 New Bug
               </Link>
             </Button>
@@ -747,7 +747,7 @@ function BugsPage() {
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-8"
+              className="ps-8"
               placeholder="Search by title or bug ID..."
               value={search}
               onChange={(e) => {
@@ -854,7 +854,7 @@ function BugsPage() {
           </Select>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={resetFilters}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="me-2 h-4 w-4" />
               Reset filters
             </Button>
           )}
@@ -868,7 +868,7 @@ function BugsPage() {
             className="h-9 w-48"
           />
           <Button type="button" variant="outline" size="sm" onClick={handleSaveFilter}>
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="me-2 h-4 w-4" />
             Save filter
           </Button>
           {savedFilters.length > 0 && (
@@ -901,7 +901,7 @@ function BugsPage() {
               onClick={() => handleDeleteSavedFilter(filter.id)}
               aria-label={`Delete saved filter ${filter.name}`}
             >
-              <Trash2 className="mr-1 h-3.5 w-3.5" />
+              <Trash2 className="me-1 h-3.5 w-3.5" />
               {filter.name}
             </Button>
           ))}

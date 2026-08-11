@@ -70,7 +70,7 @@ function ActivityPage() {
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw
-              className={`mr-1.5 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              className={`me-1.5 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
             Refresh

@@ -144,9 +144,9 @@ export function UserIntegrationSettings() {
                       onClick={() => disablePush.mutate()}
                     >
                       {disablePush.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <BellOff className="mr-2 h-4 w-4" />
+                        <BellOff className="me-2 h-4 w-4" />
                       )}
                       Turn off
                     </Button>
@@ -156,7 +156,7 @@ export function UserIntegrationSettings() {
                       disabled={testPush.isPending}
                       onClick={() => testPush.mutate()}
                     >
-                      {testPush.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {testPush.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                       Send test notification
                     </Button>
                   </>
@@ -167,9 +167,9 @@ export function UserIntegrationSettings() {
                     onClick={() => enablePush.mutate()}
                   >
                     {enablePush.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <Bell className="mr-2 h-4 w-4" />
+                      <Bell className="me-2 h-4 w-4" />
                     )}
                     Enable notifications
                   </Button>
@@ -215,9 +215,9 @@ export function UserIntegrationSettings() {
                 disabled={storeKey.isPending || apiKey.trim().length < 20}
               >
                 {storeKey.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <KeyRound className="mr-2 h-4 w-4" />
+                  <KeyRound className="me-2 h-4 w-4" />
                 )}
                 Save key
               </Button>
@@ -236,9 +236,9 @@ export function UserIntegrationSettings() {
               onClick={() => dropKey.mutate()}
             >
               {dropKey.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="me-2 h-4 w-4" />
               )}
               Remove my key
             </Button>

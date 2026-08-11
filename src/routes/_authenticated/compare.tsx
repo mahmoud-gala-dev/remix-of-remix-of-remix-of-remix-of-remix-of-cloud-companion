@@ -125,7 +125,7 @@ function FilePicker({
           </div>
         ) : (
           <Button variant="outline" className="w-full" onClick={() => inputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" aria-hidden="true" /> Choose file
+            <Upload className="me-2 h-4 w-4" aria-hidden="true" /> Choose file
           </Button>
         )}
       </CardContent>

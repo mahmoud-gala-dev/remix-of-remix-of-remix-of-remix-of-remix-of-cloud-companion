@@ -202,9 +202,9 @@ export function IntegrationSettings() {
         onClick={() => test(target)}
       >
         {testing === target ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="me-2 h-4 w-4 animate-spin" />
         ) : (
-          <PlugZap className="mr-2 h-4 w-4" />
+          <PlugZap className="me-2 h-4 w-4" />
         )}
         {label}
       </Button>
@@ -274,9 +274,9 @@ export function IntegrationSettings() {
               onClick={() => slackTestMutation.mutate()}
             >
               {slackTestMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="me-2 h-4 w-4" />
               )}
               Send test message
             </Button>
@@ -496,7 +496,7 @@ export function IntegrationSettings() {
 
       <div className="flex justify-end">
         <Button onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
-          {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {saveMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
           Save integration settings
         </Button>
       </div>

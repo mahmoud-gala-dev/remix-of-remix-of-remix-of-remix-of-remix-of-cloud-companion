@@ -120,7 +120,7 @@ function NewBugPage() {
         </p>
         <Button asChild variant="outline">
           <Link to="/bugs">
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to bugs
+            <ArrowLeft className="me-1.5 h-4 w-4" /> Back to bugs
           </Link>
         </Button>
       </div>

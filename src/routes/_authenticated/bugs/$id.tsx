@@ -177,7 +177,7 @@ function BugDetailPage() {
         </p>
         <Button asChild variant="outline">
           <Link to="/bugs">
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to bugs
+            <ArrowLeft className="me-1.5 h-4 w-4" /> Back to bugs
           </Link>
         </Button>
       </div>
@@ -194,7 +194,7 @@ function BugDetailPage() {
         </p>
         <Button asChild variant="outline">
           <Link to="/bugs">
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to bugs
+            <ArrowLeft className="me-1.5 h-4 w-4" /> Back to bugs
           </Link>
         </Button>
       </div>
@@ -256,7 +256,7 @@ function BugDetailPage() {
                 prevBugId && navigate({ to: "/bugs/$id", params: { id: String(prevBugId) } })
               }
             >
-              <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              <ChevronLeft className="me-1 h-4 w-4" /> Previous
             </Button>
             {currentIndex >= 0 && bugOrder.length > 0 && (
               <span className="px-1 text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ function BugDetailPage() {
                 nextBugId && navigate({ to: "/bugs/$id", params: { id: String(nextBugId) } })
               }
             >
-              Next <ChevronRight className="ml-1 h-4 w-4" />
+              Next <ChevronRight className="ms-1 h-4 w-4" />
             </Button>
           </div>
 
@@ -279,7 +279,7 @@ function BugDetailPage() {
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete bug
+                <Trash2 className="me-1.5 h-3.5 w-3.5" /> Delete bug
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

@@ -89,7 +89,7 @@ function SectionCard({
         <CardTitle className="flex items-center gap-2 text-base">
           <Icon className="h-4 w-4" aria-hidden="true" />
           {title}
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="secondary" className="ms-auto">
             {count}
           </Badge>
         </CardTitle>

@@ -148,13 +148,13 @@ function ResolutionTimesPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-left text-muted-foreground">
+                <thead className="text-start text-muted-foreground">
                   <tr className="border-b border-border/60">
                     <th className="py-2 font-medium">#</th>
                     <th className="py-2 font-medium">Developer</th>
                     <th className="py-2 font-medium">Role</th>
                     <th className="py-2 font-medium">Bugs</th>
-                    <th className="py-2 text-right font-medium">Total time</th>
+                    <th className="py-2 text-end font-medium">Total time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,14 +164,14 @@ function ResolutionTimesPage() {
                       <td className="py-2 font-medium">
                         {entry.name}
                         {index === 0 && (
-                          <Crown className="ml-1.5 inline h-3.5 w-3.5 text-amber-500" />
+                          <Crown className="ms-1.5 inline h-3.5 w-3.5 text-amber-500" />
                         )}
                       </td>
                       <td className="py-2">
                         <Badge variant="outline">{entry.role}</Badge>
                       </td>
                       <td className="py-2 tabular-nums">{entry.bugs}</td>
-                      <td className="py-2 text-right font-mono tabular-nums">
+                      <td className="py-2 text-end font-mono tabular-nums">
                         {formatDuration(entry.totalSeconds)}
                       </td>
                     </tr>
@@ -195,13 +195,13 @@ function ResolutionTimesPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-left text-muted-foreground">
+                <thead className="text-start text-muted-foreground">
                   <tr className="border-b border-border/60">
                     <th className="py-2 font-medium">Bug</th>
                     <th className="py-2 font-medium">Title</th>
                     <th className="py-2 font-medium">Module</th>
                     <th className="py-2 font-medium">Developer</th>
-                    <th className="py-2 text-right font-medium">Time</th>
+                    <th className="py-2 text-end font-medium">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -216,7 +216,7 @@ function ResolutionTimesPage() {
                         <td className="max-w-[280px] truncate py-2">{row.title}</td>
                         <td className="py-2">{row.module}</td>
                         <td className="py-2">{row.developerName}</td>
-                        <td className="py-2 text-right font-mono tabular-nums">
+                        <td className="py-2 text-end font-mono tabular-nums">
                           {formatDuration(row.totalSeconds)}
                         </td>
                       </tr>

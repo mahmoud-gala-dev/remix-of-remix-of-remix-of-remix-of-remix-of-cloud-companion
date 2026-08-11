@@ -133,7 +133,7 @@ function AnalyticsPage() {
           </p>
         </div>
         <Button variant="outline" onClick={() => window.print()} className="no-print">
-          <Printer className="mr-2 h-4 w-4" />
+          <Printer className="me-2 h-4 w-4" />
           Export PDF
         </Button>
       </header>

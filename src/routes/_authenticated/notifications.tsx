@@ -187,7 +187,7 @@ function NotificationsPage() {
               onClick={() => markAllReadMutation.mutate()}
               disabled={markAllReadMutation.isPending}
             >
-              <CheckCheck className="mr-2 h-4 w-4" />
+              <CheckCheck className="me-2 h-4 w-4" />
               Mark all read
             </Button>
           )}
@@ -221,7 +221,7 @@ function NotificationsPage() {
                     >
                       {notification.message}
                     </p>
-                    <span className="ml-4 whitespace-nowrap text-xs text-muted-foreground">
+                    <span className="ms-4 whitespace-nowrap text-xs text-muted-foreground">
                       {notification.created_at
                         ? new Date(notification.created_at).toLocaleString()
                         : ""}

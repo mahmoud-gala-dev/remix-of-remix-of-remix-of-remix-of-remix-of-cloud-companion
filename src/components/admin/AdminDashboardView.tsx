@@ -73,7 +73,7 @@ export const AdminDashboardView: React.FC = () => {
               placeholder="Search by username or email address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="ps-9"
             />
           </div>
 

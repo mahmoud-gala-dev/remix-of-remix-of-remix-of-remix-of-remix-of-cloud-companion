@@ -120,7 +120,7 @@ function AvatarSection({ username }: { username: string }) {
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSaveAvatar}>
-              <ImageIcon className="mr-1.5 h-3.5 w-3.5" /> Save Avatar
+              <ImageIcon className="me-1.5 h-3.5 w-3.5" /> Save Avatar
             </Button>
             {inputUrl && (
               <Button
@@ -392,7 +392,7 @@ function SettingsPage() {
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" /> Sign out
+            <LogOut className="me-2 h-4 w-4" aria-hidden="true" /> Sign out
           </Button>
         </CardContent>
       </Card>
