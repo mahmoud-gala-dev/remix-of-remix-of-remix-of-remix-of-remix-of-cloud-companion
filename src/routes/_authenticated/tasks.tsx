@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ClipboardList, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { canCreateTasks } from "@/lib/permissions";
 import {
   fetchProfiles,
@@ -119,6 +120,7 @@ function TasksSkeleton() {
 
 function TasksPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const canManage = canCreateTasks(user?.role);
 
@@ -181,7 +183,7 @@ function TasksPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("Not signed in");
+      if (!user) throw new Error(t("tasks.notSignedIn"));
       const { error } = await supabase.from("tasks").insert({
         title: newTitle.trim(),
         description: newDesc || null,
@@ -203,7 +205,7 @@ function TasksPage() {
       setNewProjectId("none");
       setNewAssignee("none");
       setCreateOpen(false);
-      toast.success("Task created");
+      toast.success(t("tasks.toast.created"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -227,7 +229,7 @@ function TasksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       setEditingId(null);
-      toast.success("Task updated");
+      toast.success(t("tasks.toast.updated"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -240,7 +242,7 @@ function TasksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       setDeleteId(null);
-      toast.success("Task deleted");
+      toast.success(t("tasks.toast.deleted"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -289,12 +291,17 @@ function TasksPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <ClipboardList className="h-6 w-6 text-primary" />
-            Priority Tasks
+            {t("tasks.title")}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {tasks
-              ? `${tasks.length} total · ${pendingCount} pending · ${inProgressCount} in progress · ${doneCount} done`
-              : "Loading..."}
+              ? t("tasks.summary", {
+                  total: tasks.length,
+                  pending: pendingCount,
+                  inProgress: inProgressCount,
+                  done: doneCount,
+                })
+              : t("tasks.loading")}
           </p>
         </div>
 
@@ -303,23 +310,23 @@ function TasksPage() {
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="me-2 h-4 w-4" />
-                New Task
+                {t("tasks.new")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create Task</DialogTitle>
-                <DialogDescription>Add a new task for the team to prioritize.</DialogDescription>
+                <DialogTitle>{t("tasks.create.title")}</DialogTitle>
+                <DialogDescription>{t("tasks.create.description")}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Project</label>
+                  <label className="text-sm font-medium">{t("tasks.field.project")}</label>
                   <Select value={newProjectId} onValueChange={setNewProjectId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="No project" />
+                      <SelectValue placeholder={t("tasks.noProject")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No project</SelectItem>
+                      <SelectItem value="none">{t("tasks.noProject")}</SelectItem>
                       {(projects ?? []).map((p) => (
                         <SelectItem key={p.id} value={String(p.id)}>
                           {p.key} · {p.name}
@@ -329,25 +336,25 @@ function TasksPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Title *</label>
+                  <label className="text-sm font-medium">{t("tasks.field.title")}</label>
                   <Input
-                    placeholder="Task title..."
+                    placeholder={t("tasks.field.titlePlaceholder")}
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     autoFocus
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Description</label>
+                  <label className="text-sm font-medium">{t("tasks.field.description")}</label>
                   <Textarea
-                    placeholder="Optional details..."
+                    placeholder={t("tasks.field.descPlaceholder")}
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     className="min-h-[80px]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Priority</label>
+                  <label className="text-sm font-medium">{t("tasks.field.priority")}</label>
                   <Select value={newPriority} onValueChange={setNewPriority}>
                     <SelectTrigger>
                       <SelectValue />
@@ -362,13 +369,13 @@ function TasksPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Assign to developer</label>
+                  <label className="text-sm font-medium">{t("tasks.field.assignee")}</label>
                   <Select value={newAssignee} onValueChange={setNewAssignee}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Unassigned" />
+                      <SelectValue placeholder={t("tasks.unassigned")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Unassigned</SelectItem>
+                      <SelectItem value="none">{t("tasks.unassigned")}</SelectItem>
                       {developers.map((d) => (
                         <SelectItem key={d.id} value={d.id}>
                           {d.username}
@@ -381,20 +388,20 @@ function TasksPage() {
 
                   <div className="flex items-center gap-1.5 text-sm font-medium text-warning">
                     <Star className="h-4 w-4" />
-                    Important task
+                    {t("tasks.importantTask")}
                   </div>
                   <Switch checked={newIsImportant} onCheckedChange={setNewIsImportant} />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateOpen(false)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   onClick={() => createMutation.mutate()}
                   disabled={!newTitle.trim() || createMutation.isPending}
                 >
-                  Create
+                  {t("common.create")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -404,7 +411,7 @@ function TasksPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          placeholder="Search tasks..."
+          placeholder={t("tasks.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -414,7 +421,7 @@ function TasksPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All">All statuses</SelectItem>
+            <SelectItem value="All">{t("tasks.filter.allStatuses")}</SelectItem>
             {TASK_STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
@@ -427,7 +434,7 @@ function TasksPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All">All priorities</SelectItem>
+            <SelectItem value="All">{t("tasks.filter.allPriorities")}</SelectItem>
             {PRIORITIES.map((p) => (
               <SelectItem key={p} value={p}>
                 {p}
@@ -437,11 +444,11 @@ function TasksPage() {
         </Select>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={filterImportant} onCheckedChange={setFilterImportant} />
-          Important only
+          {t("tasks.filter.importantOnly")}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={filterMine} onCheckedChange={setFilterMine} />
-          Assigned to me
+          {t("tasks.filter.mine")}
         </label>
 
       </div>
@@ -450,7 +457,7 @@ function TasksPage() {
         {filtered.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              No tasks match your filters.
+              {t("tasks.empty")}
             </CardContent>
           </Card>
         ) : (
@@ -495,7 +502,7 @@ function TasksPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No project</SelectItem>
+                          <SelectItem value="none">{t("tasks.noProject")}</SelectItem>
                           {(projects ?? []).map((p) => (
                             <SelectItem key={p.id} value={String(p.id)}>
                               {p.name}
@@ -505,19 +512,19 @@ function TasksPage() {
                       </Select>
                       <label className="flex items-center gap-2 text-sm">
                         <Switch checked={editIsImportant} onCheckedChange={setEditIsImportant} />
-                        Important
+                        {t("tasks.important")}
                       </label>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>
-                        Cancel
+                        {t("common.cancel")}
                       </Button>
                       <Button
                         size="sm"
                         onClick={() => updateMutation.mutate(task.id)}
                         disabled={updateMutation.isPending}
                       >
-                        Save
+                        {t("common.save")}
                       </Button>
                     </div>
                   </div>
@@ -555,7 +562,7 @@ function TasksPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Edit task ${task.title}`}
+                          aria-label={t("tasks.editAria", { title: task.title })}
                           onClick={() => startEdit(task)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -563,7 +570,7 @@ function TasksPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Delete task ${task.title}`}
+                          aria-label={t("tasks.deleteAria", { title: task.title })}
                           onClick={() => setDeleteId(task.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -581,13 +588,13 @@ function TasksPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete task?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("tasks.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("tasks.deleteBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}>
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
