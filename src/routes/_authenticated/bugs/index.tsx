@@ -1086,7 +1086,10 @@ function BugsPage() {
                         {bug.priority}
                       </Badge>
                     </div>
-                    <p className="line-clamp-2 text-sm font-medium">{bug.title}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="line-clamp-2 text-sm font-medium">{bug.title}</p>
+                      <SlaBadge bug={bug} />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {bug.module} ·{" "}
                       {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : "Unassigned"}
