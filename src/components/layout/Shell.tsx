@@ -143,7 +143,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="border-t border-sidebar-border p-4">
       <div className="mb-4 flex items-center gap-3">
         <Avatar className="h-9 w-9">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={user?.username ?? "User Avatar"} /> : null}
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} alt={user?.username ?? t("shell.userAvatar")} />
+          ) : null}
           <AvatarFallback className="bg-primary/15 font-medium text-primary">
             {user?.username?.substring(0, 2).toUpperCase() ?? "??"}
           </AvatarFallback>
@@ -154,9 +156,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-        <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
-        Sign out
+        <LogOut className="me-2 h-4 w-4" aria-hidden="true" />
+        {t("shell.signOut")}
       </Button>
+
     </div>
   );
 
