@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import type { Notification } from "@/lib/api";
 import { markAssistanceReceivedForBug } from "@/lib/assistance-requests";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +96,7 @@ function NotificationsSkeleton() {
 
 function NotificationsPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -174,11 +176,11 @@ function NotificationsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("notif.title")}</h1>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <Switch checked={unreadOnly} onCheckedChange={setUnreadOnly} />
-            Unread only
+            {t("notif.unreadOnly")}
           </label>
           {unreadCount > 0 && (
             <Button
@@ -188,7 +190,7 @@ function NotificationsPage() {
               disabled={markAllReadMutation.isPending}
             >
               <CheckCheck className="me-2 h-4 w-4" />
-              Mark all read
+              {t("notif.markAllRead")}
             </Button>
           )}
         </div>
@@ -198,8 +200,8 @@ function NotificationsPage() {
         {visible.length === 0 ? (
           <Card className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
             <Bell className="mb-4 h-12 w-12 opacity-20" />
-            <p>You're all caught up.</p>
-            <p className="text-sm">No notifications to show.</p>
+            <p>{t("notif.emptyTitle")}</p>
+            <p className="text-sm">{t("notif.emptyBody")}</p>
           </Card>
         ) : (
           visible.map((notification) => (
@@ -243,7 +245,7 @@ function NotificationsPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-primary"
-                    aria-label={`Mark notification ${notification.id} as read`}
+                    aria-label={`${t("notif.markOne")} ${notification.id}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       markReadMutation.mutate(notification);

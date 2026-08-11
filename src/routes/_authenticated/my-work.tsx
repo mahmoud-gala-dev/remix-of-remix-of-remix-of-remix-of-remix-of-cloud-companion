@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AtSign, Bug as BugIcon, ClipboardList, Inbox, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { friendlyDbError, statusTone, priorityTone, type Bug, type Task } from "@/lib/api";
 import { slaLabel, slaState, slaSummary } from "@/lib/sla";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
@@ -102,6 +103,7 @@ function SectionCard({
 
 function MyWorkPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const userId = user?.id ?? "";
 
   const bugsQuery = useQuery({
@@ -140,19 +142,18 @@ function MyWorkPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">My Work</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("myWork.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Everything waiting on you — assigned and reported bugs, priority tasks, mentions and SLA
-          alerts, in one place.
+          {t("myWork.description")}
         </p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-4">
         {[
-          { label: "Open bugs", value: openBugs.length },
-          { label: "Breached SLA", value: aging.breached },
-          { label: "At risk", value: aging.atRisk },
-          { label: "Open tasks", value: (tasksQuery.data ?? []).length },
+          { label: t("myWork.stat.openBugs"), value: openBugs.length },
+          { label: t("myWork.stat.breached"), value: aging.breached },
+          { label: t("myWork.stat.atRisk"), value: aging.atRisk },
+          { label: t("myWork.stat.openTasks"), value: (tasksQuery.data ?? []).length },
         ].map((stat) => (
           <Card key={stat.label} className="border-border/60">
             <CardContent className="pt-6">
@@ -168,13 +169,13 @@ function MyWorkPage() {
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           <SectionCard
-            title="Bugs on my plate"
-            description="Unresolved bugs assigned to you or reported by you."
+            title={t("myWork.bugs.title")}
+            description={t("myWork.bugs.description")}
             icon={BugIcon}
             count={openBugs.length}
           >
             {openBugs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing open — great work.</p>
+              <p className="text-sm text-muted-foreground">{t("myWork.bugs.empty")}</p>
             ) : (
               openBugs.slice(0, 10).map((bug) => (
                 <Link
@@ -198,13 +199,13 @@ function MyWorkPage() {
           </SectionCard>
 
           <SectionCard
-            title="Priority tasks"
-            description="Tasks assigned to you that are not done yet."
+            title={t("myWork.tasks.title")}
+            description={t("myWork.tasks.description")}
             icon={ClipboardList}
             count={(tasksQuery.data ?? []).length}
           >
             {(tasksQuery.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open tasks assigned to you.</p>
+              <p className="text-sm text-muted-foreground">{t("myWork.tasks.empty")}</p>
             ) : (
               (tasksQuery.data ?? []).slice(0, 10).map((task) => (
                 <Link
@@ -213,7 +214,7 @@ function MyWorkPage() {
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="min-w-0 flex-1 truncate">{task.title}</span>
-                  {task.is_important && <Badge variant="destructive">Important</Badge>}
+                  {task.is_important && <Badge variant="destructive">{t("myWork.tasks.important")}</Badge>}
                   <Badge variant="outline">{task.priority}</Badge>
                   <Badge variant="outline">{task.status}</Badge>
                 </Link>
@@ -222,13 +223,13 @@ function MyWorkPage() {
           </SectionCard>
 
           <SectionCard
-            title="Mentions & alerts"
-            description="Chat mentions, assignments and SLA warnings addressed to you."
+            title={t("myWork.inbox.title")}
+            description={t("myWork.inbox.description")}
             icon={Inbox}
             count={(inboxQuery.data ?? []).length}
           >
             {(inboxQuery.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Your inbox is clear.</p>
+              <p className="text-sm text-muted-foreground">{t("myWork.inbox.empty")}</p>
             ) : (
               (inboxQuery.data ?? []).slice(0, 10).map((item) => (
                 <div
@@ -255,7 +256,7 @@ function MyWorkPage() {
                       params={{ bugId: String(item.bug_id) }}
                       className="text-xs font-medium text-primary hover:underline"
                     >
-                      Open
+                      {t("myWork.inbox.open")}
                     </Link>
                   )}
                 </div>
@@ -264,13 +265,13 @@ function MyWorkPage() {
           </SectionCard>
 
           <SectionCard
-            title="SLA attention"
-            description="Your oldest bugs that breached or are close to breaching their target."
+            title={t("myWork.sla.title")}
+            description={t("myWork.sla.description")}
             icon={ShieldAlert}
             count={atRisk.length}
           >
             {atRisk.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Everything you own is inside SLA.</p>
+              <p className="text-sm text-muted-foreground">{t("myWork.sla.empty")}</p>
             ) : (
               atRisk.map((bug) => (
                 <Link
