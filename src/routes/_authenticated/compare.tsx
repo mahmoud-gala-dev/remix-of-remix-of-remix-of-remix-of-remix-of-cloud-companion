@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import * as XLSX from "xlsx";
 import { FileSpreadsheet, GitCompare, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
