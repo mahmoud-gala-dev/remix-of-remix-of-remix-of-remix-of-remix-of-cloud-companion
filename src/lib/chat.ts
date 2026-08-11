@@ -61,3 +61,110 @@ export function messageDay(iso: string) {
   if (sameDay(date, yesterday)) return "Yesterday";
   return date.toLocaleDateString();
 }
+
+/* ------------------------------------------------------------------ *
+ * Mentions
+ * ------------------------------------------------------------------ */
+
+/** Matches `@username` tokens inside a message body. */
+export const MENTION_PATTERN = /@([A-Za-z0-9_.\-]{2,32})/g;
+
+/** Usernames mentioned in a message, lowercased and de-duplicated. */
+export function extractMentions(content: string): string[] {
+  return Array.from(new Set(Array.from(content.matchAll(MENTION_PATTERN), (m) => m[1]!.toLowerCase())));
+}
+
+/** True when the given username is mentioned in the message. */
+export function mentionsUser(content: string, username: string | null | undefined) {
+  if (!username) return false;
+  return extractMentions(content).includes(username.toLowerCase());
+}
+
+/** Splits a message into plain text and mention segments for highlighted rendering. */
+export function splitMentions(content: string): { text: string; mention: boolean }[] {
+  const parts: { text: string; mention: boolean }[] = [];
+  let lastIndex = 0;
+  for (const match of content.matchAll(MENTION_PATTERN)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) parts.push({ text: content.slice(lastIndex, index), mention: false });
+    parts.push({ text: match[0], mention: true });
+    lastIndex = index + match[0].length;
+  }
+  if (lastIndex < content.length) parts.push({ text: content.slice(lastIndex), mention: false });
+  return parts;
+}
+
+/** Replaces the `@partial` token at the caret with a full username. */
+export function applyMention(draft: string, caret: number, username: string) {
+  const before = draft.slice(0, caret);
+  const match = /@([A-Za-z0-9_.\-]*)$/.exec(before);
+  if (!match) return { value: draft, caret };
+  const start = caret - match[0].length;
+  const value = `${draft.slice(0, start)}@${username} ${draft.slice(caret)}`;
+  return { value, caret: start + username.length + 2 };
+}
+
+/** The `@partial` token currently being typed, or null. */
+export function activeMentionQuery(draft: string, caret: number): string | null {
+  const match = /@([A-Za-z0-9_.\-]*)$/.exec(draft.slice(0, caret));
+  return match ? (match[1] ?? "") : null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Unread tracking (per browser, per project)
+ * ------------------------------------------------------------------ */
+
+const LAST_SEEN_KEY = "electropi.chat.lastSeen";
+
+type LastSeenMap = Record<string, string>;
+
+export function readLastSeen(): LastSeenMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(LAST_SEEN_KEY);
+    return raw ? (JSON.parse(raw) as LastSeenMap) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function markChannelSeen(projectId: number, iso = new Date().toISOString()) {
+  if (typeof window === "undefined") return;
+  const next = { ...readLastSeen(), [String(projectId)]: iso };
+  try {
+    window.localStorage.setItem(LAST_SEEN_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("electropi:chat-seen"));
+  } catch {
+    // Storage can be unavailable in private mode; unread badges simply stay as-is.
+  }
+}
+
+export type ChatActivityRow = { project_id: number; user_id: string; created_at: string };
+
+/** Recent chat activity across every project the user may read. */
+export async function fetchChatActivity(limit = 300): Promise<ChatActivityRow[]> {
+  const { data, error } = await supabase
+    .from("project_messages")
+    .select("project_id, user_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(friendlyDbError(error));
+  return (data ?? []) as ChatActivityRow[];
+}
+
+/** Unread message count per project id, ignoring the user's own messages. */
+export function unreadByProject(
+  rows: ChatActivityRow[],
+  currentUserId: string | null | undefined,
+  lastSeen: LastSeenMap = readLastSeen(),
+): Record<number, number> {
+  const counts: Record<number, number> = {};
+  for (const row of rows) {
+    if (currentUserId && row.user_id === currentUserId) continue;
+    const seen = lastSeen[String(row.project_id)];
+    if (seen && new Date(row.created_at) <= new Date(seen)) continue;
+    counts[row.project_id] = (counts[row.project_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
