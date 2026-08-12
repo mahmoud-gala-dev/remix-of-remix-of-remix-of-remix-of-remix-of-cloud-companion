@@ -1,23 +1,29 @@
 import { EMPTY_BUG_FILTERS, type BugFilterState } from "@/components/bugs/BugFilters";
 
+/**
+ * Every field is optional so `<Link to="/bugs">` stays valid without repeating
+ * the whole filter object; `parseBugsSearch` fills defaults when reading.
+ */
 export type BugsSearch = {
-  q: string;
-  module: string;
-  status: string;
-  priority: string;
-  severity: string;
-  project: string;
-  assignee: string;
-  page: number;
-  view: "table" | "board";
+  q?: string;
+  module?: string;
+  status?: string;
+  priority?: string;
+  severity?: string;
+  project?: string;
+  assignee?: string;
+  page?: number;
+  view?: "table" | "board";
 };
+
+export type ResolvedBugsSearch = Required<BugsSearch>;
 
 function str(value: unknown, fallback: string) {
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
 /** Reads the bug list state out of the URL, tolerating any hand-edited value. */
-export function parseBugsSearch(input: Record<string, unknown>): BugsSearch {
+export function parseBugsSearch(input: Record<string, unknown>): ResolvedBugsSearch {
   const page = Number(input["page"]);
   return {
     q: str(input["q"], ""),
@@ -32,7 +38,7 @@ export function parseBugsSearch(input: Record<string, unknown>): BugsSearch {
   };
 }
 
-export function searchToFilterState(search: BugsSearch): BugFilterState {
+export function searchToFilterState(search: ResolvedBugsSearch): BugFilterState {
   return {
     ...EMPTY_BUG_FILTERS,
     search: search.q,

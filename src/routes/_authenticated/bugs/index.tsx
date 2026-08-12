@@ -71,11 +71,11 @@ import {
   filterStateToSearch,
   parseBugsSearch,
   searchToFilterState,
-  type BugsSearch,
+  type ResolvedBugsSearch,
 } from "@/lib/bug-filter-url";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
-  validateSearch: (search: Record<string, unknown>): BugsSearch => parseBugsSearch(search),
+  validateSearch: (search: Record<string, unknown>): ResolvedBugsSearch => parseBugsSearch(search),
   // Default values stay out of the URL so shared links only carry real filters.
   search: {
     middlewares: [
@@ -129,7 +129,7 @@ const BUG_FILTERS_KEY = "electropi.saved.bug_filters";
 function BugsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: "/bugs" });
+  const navigate = useNavigate({ from: "/bugs/" });
   const { user } = useAuth();
   const search = Route.useSearch();
 

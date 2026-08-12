@@ -18,6 +18,55 @@ export async function fetchProjectMessages(projectId: number): Promise<ProjectMe
   return data ?? [];
 }
 
+/** How many messages each incremental chat page loads. */
+export const CHAT_PAGE_SIZE = 50;
+
+export type ProjectMessagePage = {
+  messages: ProjectMessage[];
+  hasMore: boolean;
+  /** `created_at` of the oldest row in this page — pass it back as `before` to page further. */
+  oldestCursor: string | null;
+};
+
+/**
+ * One page of chat history, newest-first on the wire but returned oldest-first
+ * so it can be prepended straight into the transcript.
+ */
+export async function fetchProjectMessagePage(
+  projectId: number,
+  { before = null, limit = CHAT_PAGE_SIZE }: { before?: string | null; limit?: number } = {},
+): Promise<ProjectMessagePage> {
+  let query = supabase
+    .from("project_messages")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(limit + 1);
+  if (before) query = query.lt("created_at", before);
+
+  const { data, error } = await query;
+  if (error) throw new Error(friendlyDbError(error));
+
+  const rows = data ?? [];
+  const hasMore = rows.length > limit;
+  const page = (hasMore ? rows.slice(0, limit) : rows).slice().reverse();
+  return {
+    messages: page,
+    hasMore,
+    oldestCursor: page[0]?.created_at ?? null,
+  };
+}
+
+/** Merges an older page in front of the transcript, de-duplicating by id. */
+export function mergeMessagePages(
+  older: ProjectMessage[],
+  current: ProjectMessage[],
+): ProjectMessage[] {
+  const seen = new Set(current.map((message) => Number(message.id)));
+  return [...older.filter((message) => !seen.has(Number(message.id))), ...current];
+}
+
+
 export type ChatAttachmentInput = {
   path: string;
   name: string;
@@ -285,4 +334,70 @@ export function typingLabel(names: string[]): string | null {
   if (names.length === 1) return `${names[0]} is typing…`;
   if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
   return `${names.length} people are typing…`;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rich mentions: @person, #bug, ~project
+ * ------------------------------------------------------------------ */
+
+export type ChatTokenKind = "user" | "bug" | "project";
+
+export type ChatToken =
+  | { kind: "text"; text: string }
+  | { kind: ChatTokenKind; text: string; value: string };
+
+/** `@user`, `#BUG-12` / `#12`, `~KEY` — the three linkable chat references. */
+export const CHAT_TOKEN_PATTERN = /([@#~])([A-Za-z0-9_.\-]{1,40})/g;
+
+const TOKEN_KINDS: Record<string, ChatTokenKind> = { "@": "user", "#": "bug", "~": "project" };
+
+/** Splits a message body into plain text and reference segments for rendering. */
+export function splitChatTokens(content: string): ChatToken[] {
+  const parts: ChatToken[] = [];
+  let lastIndex = 0;
+  for (const match of content.matchAll(CHAT_TOKEN_PATTERN)) {
+    const index = match.index ?? 0;
+    const kind = TOKEN_KINDS[match[1]!]!;
+    if (index > lastIndex) parts.push({ kind: "text", text: content.slice(lastIndex, index) });
+    parts.push({ kind, text: match[0], value: match[2]! });
+    lastIndex = index + match[0].length;
+  }
+  if (lastIndex < content.length) parts.push({ kind: "text", text: content.slice(lastIndex) });
+  return parts;
+}
+
+/** References of one kind used in a message, lowercased and de-duplicated. */
+export function extractChatTokens(content: string, kind: ChatTokenKind): string[] {
+  return Array.from(
+    new Set(
+      splitChatTokens(content)
+        .filter((part): part is Extract<ChatToken, { value: string }> => part.kind === kind)
+        .map((part) => part.value.toLowerCase()),
+    ),
+  );
+}
+
+/** The reference currently being typed at the caret, or null. */
+export function activeChatToken(
+  draft: string,
+  caret: number,
+): { kind: ChatTokenKind; query: string } | null {
+  const match = /([@#~])([A-Za-z0-9_.\-]*)$/.exec(draft.slice(0, caret));
+  if (!match) return null;
+  return { kind: TOKEN_KINDS[match[1]!]!, query: match[2] ?? "" };
+}
+
+/** Replaces the reference being typed at the caret with a complete one. */
+export function applyChatToken(
+  draft: string,
+  caret: number,
+  kind: ChatTokenKind,
+  value: string,
+): { value: string; caret: number } {
+  const prefix = kind === "user" ? "@" : kind === "bug" ? "#" : "~";
+  const before = draft.slice(0, caret);
+  const match = /([@#~])([A-Za-z0-9_.\-]*)$/.exec(before);
+  const start = match ? caret - match[0].length : caret;
+  const next = `${draft.slice(0, start)}${prefix}${value} ${draft.slice(caret)}`;
+  return { value: next, caret: start + prefix.length + value.length + 1 };
 }
