@@ -256,7 +256,7 @@ function BugDetailPage() {
                 prevBugId && navigate({ to: "/bugs/$id", params: { id: String(prevBugId) } })
               }
             >
-              <ChevronLeft className="me-1 h-4 w-4" /> Previous
+              <ChevronLeft className="me-1 h-4 w-4" /> {t("common.previous")}
             </Button>
             {currentIndex >= 0 && bugOrder.length > 0 && (
               <span className="px-1 text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ function BugDetailPage() {
                 nextBugId && navigate({ to: "/bugs/$id", params: { id: String(nextBugId) } })
               }
             >
-              Next <ChevronRight className="ms-1 h-4 w-4" />
+              {t("common.next")} <ChevronRight className="ms-1 h-4 w-4" />
             </Button>
           </div>
 
@@ -279,20 +279,17 @@ function BugDetailPage() {
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
-                <Trash2 className="me-1.5 h-3.5 w-3.5" /> Delete bug
+                <Trash2 className="me-1.5 h-3.5 w-3.5" /> {t("bug.delete")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete this bug?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the bug and all associated comments, attachments and
-                  history.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t("bug.delete.title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("bug.delete.body")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => deleteBug.mutate()}>Delete</AlertDialogAction>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteBug.mutate()}>{t("common.delete")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -312,8 +309,8 @@ function BugDetailPage() {
             canEdit={canEdit}
             canEditStatus={canChangeStatus}
           />
-          <BugAttachments bugId={bug.id} />
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
+          <BugAttachments bugId={bug.id} />
         </div>
         <div className="space-y-6">
           <BugResolutionTimer

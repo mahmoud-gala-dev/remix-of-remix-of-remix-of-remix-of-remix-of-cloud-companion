@@ -10,6 +10,7 @@ import { Send, Pencil, Trash2, Check, X } from "lucide-react";
 import { nameFor, type ProfileMap } from "@/components/bugs/types";
 import { useBugComments } from "@/hooks/useBugComments";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 
 export function parseCommentDate(value: string | number | null | undefined): Date {
   if (!value) return new Date();
@@ -60,6 +61,7 @@ export function BugComments({
   currentUserId: string | null;
   profileMap: ProfileMap;
 }) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { avatarUrl } = useUserAvatar();
   const [text, setText] = useState("");
@@ -89,9 +91,12 @@ export function BugComments({
   };
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card id="comments" className="scroll-mt-24 border-border/60 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-base">Comments</CardTitle>
+        <CardTitle className="text-base">
+          {t("bug.comments")}
+          {comments.length > 0 ? ` (${comments.length})` : ""}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
@@ -136,10 +141,10 @@ export function BugComments({
                             )
                           }
                         >
-                          <Check className="me-1 h-3.5 w-3.5" /> Save
+                          <Check className="me-1 h-3.5 w-3.5" /> {t("common.save")}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                          <X className="me-1 h-3.5 w-3.5" /> Cancel
+                          <X className="me-1 h-3.5 w-3.5" /> {t("common.cancel")}
                         </Button>
                       </div>
                     </div>
@@ -180,7 +185,7 @@ export function BugComments({
             );
           })}
           {comments.length === 0 && (
-            <p className="text-sm text-muted-foreground">No comments yet</p>
+            <p className="text-sm text-muted-foreground">{t("bug.comments.empty")}</p>
           )}
         </div>
 
@@ -188,12 +193,13 @@ export function BugComments({
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Add a comment..."
+            placeholder={t("bug.comments.placeholder")}
             rows={2}
             className="flex-1"
           />
           <Button
             size="icon"
+            aria-label={t("bug.comments.send")}
             className="h-auto shrink-0"
             disabled={!text.trim() || addComment.isPending}
             onClick={() =>
