@@ -1146,10 +1146,12 @@ function BugsPage() {
 
         {selectedIds.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
-            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+            <span className="text-sm font-medium">
+              {t("bugs.bulk.selected", { count: selectedIds.length })}
+            </span>
             <Select value={bulkStatus} onValueChange={setBulkStatus}>
               <SelectTrigger className="h-9 w-40">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("bugs.bulk.status")} />
               </SelectTrigger>
               <SelectContent>
                 {BUG_STATUSES.map((item) => (
@@ -1161,10 +1163,10 @@ function BugsPage() {
             </Select>
             <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
               <SelectTrigger className="h-9 w-48">
-                <SelectValue placeholder="Assignee" />
+                <SelectValue placeholder={t("bugs.bulk.assignee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
+                <SelectItem value="unassigned">{t("bugs.bulk.unassigned")}</SelectItem>
                 {(profiles ?? []).map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     {profile.username}
@@ -1178,11 +1180,12 @@ function BugsPage() {
               onClick={() => bulkUpdateMutation.mutate()}
               disabled={bulkUpdateMutation.isPending}
             >
-              Apply bulk update
+              {t("bugs.bulk.apply")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
-              Clear
+              {t("bugs.bulk.clear")}
             </Button>
+
           </div>
         )}
 
