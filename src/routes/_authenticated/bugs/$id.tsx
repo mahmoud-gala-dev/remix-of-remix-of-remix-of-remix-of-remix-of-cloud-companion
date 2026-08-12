@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { canEditBug, canChangeBugStatus, canViewBug } from "@/lib/permissions";
 import { fetchProfiles, statusTone, priorityTone, type Bug } from "@/lib/api";
 import { profilesToMap } from "@/components/bugs/types";
