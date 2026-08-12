@@ -913,7 +913,18 @@ function BugsPage() {
               })}
             </DialogDescription>
           </DialogHeader>
+          {(importReport?.skippedEmpty || importReport?.duplicates) ? (
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {importReport.skippedEmpty > 0 && (
+                <li>{t("bugs.import.skippedEmpty", { count: importReport.skippedEmpty })}</li>
+              )}
+              {importReport.duplicates > 0 && (
+                <li>{t("bugs.import.duplicateToast", { count: importReport.duplicates })}</li>
+              )}
+            </ul>
+          ) : null}
           {importReport?.failures.length ? (
+
             <div className="space-y-3">
               <h2 className="text-sm font-semibold">{t("bugs.import.failedRows")}</h2>
               <Table>
