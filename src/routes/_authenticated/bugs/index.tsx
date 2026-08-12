@@ -862,7 +862,37 @@ function BugsPage() {
               </Link>
             </Button>
           )}
+      </div>
+
+      {/* Live upload indicator for Excel imports. */}
+      {importing && (
+        <div
+          className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-sm font-medium">
+            {importProgress
+              ? t("bugs.import.progress", {
+                  current: importProgress.current,
+                  total: importProgress.total,
+                })
+              : t("bugs.importing")}
+          </p>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{
+                width: importProgress && importProgress.total > 0
+                  ? `${Math.round((importProgress.current / importProgress.total) * 100)}%`
+                  : "10%",
+              }}
+            />
+          </div>
         </div>
+      )}
+
+
       </div>
 
       {/* ── Stats dashboard ────────────────────────────────────────────────── */}
