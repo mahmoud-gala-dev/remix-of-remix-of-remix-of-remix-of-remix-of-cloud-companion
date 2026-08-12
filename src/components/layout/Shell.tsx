@@ -11,6 +11,7 @@ import {
   GitCompare,
   Inbox,
   LayoutDashboard,
+  Lightbulb,
   PieChart,
 
   LogOut,
@@ -42,6 +43,7 @@ const baseNav = [
   { to: "/tasks", key: "nav.tasks", icon: ClipboardList },
   { to: "/projects", key: "nav.projects", icon: FolderKanban },
   { to: "/chat", key: "nav.chat", icon: MessagesSquare },
+  { to: "/improvements", key: "nav.improvements", icon: Lightbulb },
   { to: "/activity", key: "nav.activity", icon: Activity },
   { to: "/resolution-times", key: "nav.resolutionTimes", icon: Timer },
   { to: "/analytics", key: "nav.analytics", icon: PieChart },

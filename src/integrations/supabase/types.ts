@@ -410,6 +410,129 @@ export type Database = {
         }
         Relationships: []
       }
+      improvement_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          improvement_id: number
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: number
+          improvement_id: number
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: number
+          improvement_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "improvement_comments_improvement_id_fkey"
+            columns: ["improvement_id"]
+            isOneToOne: false
+            referencedRelation: "improvements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      improvements: {
+        Row: {
+          admin_response: string | null
+          attachment_name: string | null
+          attachment_path: string | null
+          attachment_type: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: number
+          kind: string
+          priority: string
+          project_id: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_type?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: number
+          kind?: string
+          priority?: string
+          project_id?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_type?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: number
+          kind?: string
+          priority?: string
+          project_id?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "improvements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: number
+          message_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: number
+          message_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: number
+          message_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "project_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           bug_id: number | null

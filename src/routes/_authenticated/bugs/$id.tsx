@@ -37,6 +37,7 @@ import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
+import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
 import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
 import { BugResolutionTimer } from "@/components/bugs/BugResolutionTimer";
@@ -85,18 +86,12 @@ function BugDetailPage() {
   const { data: profiles = [] } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
   const profileMap = profilesToMap(profiles);
 
-  // Ordered list of bug ids (same default ordering as the bugs list) used for
-  // previous / next navigation between bug detail pages.
+  // Ordered list of bug ids honouring the filters/search saved by the bugs list,
+  // so previous / next walks the same records the user was browsing.
+  const navFilters = useMemo(() => readBugNavFilters(), []);
   const { data: bugOrder = [] } = useQuery({
-    queryKey: ["bug-order"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bugs")
-        .select("id")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((row) => row.id as number);
-    },
+    queryKey: ["bug-order", navFilters],
+    queryFn: () => fetchBugIdOrder(navFilters),
   });
 
   const currentIndex = bugOrder.indexOf(bugId);

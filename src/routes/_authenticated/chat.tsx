@@ -46,6 +46,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { EmojiPicker } from "@/components/chat/EmojiPicker";
+import {
+  QUICK_REACTIONS,
+  fetchReactions,
+  groupReactions,
+  toggleReaction,
+} from "@/lib/chat-reactions";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -166,6 +173,9 @@ function ChatPage() {
           queryClient.invalidateQueries({ queryKey: ["chat-activity"] });
         },
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["chat-reactions"] });
+      })
       .subscribe();
 
     return () => {
@@ -226,6 +236,28 @@ function ChatPage() {
     messages.forEach((message) => map.set(Number(message.id), message));
     return map;
   }, [messages]);
+
+  const messageIds = useMemo(() => messages.map((message) => Number(message.id)), [messages]);
+  const reactionsQuery = useQuery({
+    queryKey: ["chat-reactions", projectId, messageIds.length],
+    queryFn: () => fetchReactions(messageIds),
+    enabled: messageIds.length > 0,
+  });
+  const reactions = reactionsQuery.data ?? [];
+
+  const react = useMutation({
+    mutationFn: ({
+      messageId,
+      emoji,
+      existingId,
+    }: {
+      messageId: number;
+      emoji: string;
+      existingId?: number | null;
+    }) => toggleReaction({ messageId, emoji, existingId: existingId ?? null, userId: user!.id }),
+    onSuccess: () => reactionsQuery.refetch(),
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -514,6 +546,55 @@ function ChatPage() {
                               name={message.attachment_name ?? t("chat.attachment")}
                             />
                           )}
+
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                            {groupReactions(reactions, Number(message.id), user?.id).map((group) => (
+                              <button
+                                key={group.emoji}
+                                type="button"
+                                disabled={!user}
+                                onClick={() =>
+                                  react.mutate({
+                                    messageId: Number(message.id),
+                                    emoji: group.emoji,
+                                    existingId: group.mine,
+                                  })
+                                }
+                                className={cn(
+                                  "rounded-full border px-1.5 py-0.5 text-xs transition-colors",
+                                  group.mine
+                                    ? "border-primary bg-primary/15 text-foreground"
+                                    : "border-border/60 bg-background/60 text-foreground hover:bg-muted",
+                                )}
+                              >
+                                {group.emoji} {group.count}
+                              </button>
+                            ))}
+                            <span className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              {QUICK_REACTIONS.slice(0, 4).map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  aria-label={`${t("chat.reactions")} ${emoji}`}
+                                  disabled={!user}
+                                  className="rounded-full px-1 text-xs hover:scale-125"
+                                  onClick={() =>
+                                    react.mutate({
+                                      messageId: Number(message.id),
+                                      emoji,
+                                      existingId: groupReactions(
+                                        reactions,
+                                        Number(message.id),
+                                        user?.id,
+                                      ).find((group) => group.emoji === emoji)?.mine ?? null,
+                                    })
+                                  }
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -598,6 +679,14 @@ function ChatPage() {
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
+                <EmojiPicker
+                  label={t("chat.reactions")}
+                  disabled={projectId === null}
+                  onPick={(emoji) => {
+                    setDraft((current) => `${current}${emoji}`);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                />
                 <Textarea
                   ref={inputRef}
                   value={draft}

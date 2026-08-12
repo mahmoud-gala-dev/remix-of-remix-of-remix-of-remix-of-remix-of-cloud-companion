@@ -90,6 +90,7 @@ import {
   saveFilter,
   type SavedFilter,
 } from "@/lib/saved-filters";
+import { writeBugNavFilters } from "@/lib/bug-nav";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
   head: () => ({
@@ -400,6 +401,12 @@ function BugsPage() {
     () => ({ status, priority, severity, module, project, assignee, search: debouncedSearch }),
     [status, priority, severity, module, project, assignee, debouncedSearch],
   );
+
+  /* Keep detail-page next/previous in sync with the filters shown here. */
+  useEffect(() => {
+    writeBugNavFilters(filters);
+  }, [filters]);
+
 
   const {
     data: bugPage,
