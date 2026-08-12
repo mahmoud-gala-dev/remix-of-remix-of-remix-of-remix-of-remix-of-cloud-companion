@@ -406,6 +406,9 @@ function BugsPage() {
   const [assignee, setAssignee] = useState("All");
   const [page, setPage] = useState(1);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  );
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showStats, setShowStats] = useState(true);
   const [view, setView] = useState<"table" | "board">("table");
