@@ -38,7 +38,16 @@ export type BugImportValidation = {
   rows: ParsedBugImportRow[];
   missingHeaders: string[];
   unexpectedHeaders: string[];
+  /** Fully blank spreadsheet rows that were skipped before validation. */
+  skippedEmpty: number;
 };
+
+/** True when every data cell of the row is blank. */
+export function isEmptyImportRow(row: ParsedBugImportRow) {
+  const { excelRowNumber: _row, ...fields } = row;
+  return Object.values(fields).every((value) => String(value ?? "").trim() === "");
+}
+
 
 export function normalizePriority(v: string) {
   const val = (v || "").trim();
