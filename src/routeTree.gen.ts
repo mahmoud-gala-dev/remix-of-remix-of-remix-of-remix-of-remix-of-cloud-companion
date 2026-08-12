@@ -20,6 +20,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedImprovementsRouteImport } from './routes/_authenticated/improvements'
 import { Route as AuthenticatedMyWorkRouteImport } from './routes/_authenticated/my-work'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedPomodoroRouteImport } from './routes/_authenticated/pomodoro'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedResolutionTimesRouteImport } from './routes/_authenticated/resolution-times'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -88,6 +89,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPomodoroRoute = AuthenticatedPomodoroRouteImport.update({
+  id: '/pomodoro',
+  path: '/pomodoro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/improvements': typeof AuthenticatedImprovementsRoute
   '/my-work': typeof AuthenticatedMyWorkRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/pomodoro': typeof AuthenticatedPomodoroRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/resolution-times': typeof AuthenticatedResolutionTimesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/improvements': typeof AuthenticatedImprovementsRoute
   '/my-work': typeof AuthenticatedMyWorkRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/pomodoro': typeof AuthenticatedPomodoroRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/resolution-times': typeof AuthenticatedResolutionTimesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/_authenticated/improvements': typeof AuthenticatedImprovementsRoute
   '/_authenticated/my-work': typeof AuthenticatedMyWorkRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/pomodoro': typeof AuthenticatedPomodoroRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/resolution-times': typeof AuthenticatedResolutionTimesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/improvements'
     | '/my-work'
     | '/notifications'
+    | '/pomodoro'
     | '/reports'
     | '/resolution-times'
     | '/settings'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/improvements'
     | '/my-work'
     | '/notifications'
+    | '/pomodoro'
     | '/reports'
     | '/resolution-times'
     | '/settings'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/_authenticated/improvements'
     | '/_authenticated/my-work'
     | '/_authenticated/notifications'
+    | '/_authenticated/pomodoro'
     | '/_authenticated/reports'
     | '/_authenticated/resolution-times'
     | '/_authenticated/settings'
@@ -376,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pomodoro': {
+      id: '/_authenticated/pomodoro'
+      path: '/pomodoro'
+      fullPath: '/pomodoro'
+      preLoaderRoute: typeof AuthenticatedPomodoroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports': {
       id: '/_authenticated/reports'
       path: '/reports'
@@ -465,6 +484,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImprovementsRoute: typeof AuthenticatedImprovementsRoute
   AuthenticatedMyWorkRoute: typeof AuthenticatedMyWorkRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPomodoroRoute: typeof AuthenticatedPomodoroRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedResolutionTimesRoute: typeof AuthenticatedResolutionTimesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -486,6 +506,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImprovementsRoute: AuthenticatedImprovementsRoute,
   AuthenticatedMyWorkRoute: AuthenticatedMyWorkRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPomodoroRoute: AuthenticatedPomodoroRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedResolutionTimesRoute: AuthenticatedResolutionTimesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
