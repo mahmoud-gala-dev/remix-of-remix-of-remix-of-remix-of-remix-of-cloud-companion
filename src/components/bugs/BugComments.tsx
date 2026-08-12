@@ -116,10 +116,8 @@ export function BugComments({
 
             return (
               <div key={c.id} className="flex gap-3">
-                <Avatar className="h-8 w-8 shrink-0 border border-border/50">
-                  {isOwner && avatarUrl ? <AvatarImage src={avatarUrl} alt={authorName} /> : null}
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
+                <UserAvatar userId={c.user_id} name={authorName} />
+
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{authorName}</span>
