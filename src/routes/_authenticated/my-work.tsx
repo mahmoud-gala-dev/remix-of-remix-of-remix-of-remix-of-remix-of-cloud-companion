@@ -180,8 +180,8 @@ function MyWorkPage() {
               openBugs.slice(0, 10).map((bug) => (
                 <Link
                   key={bug.id}
-                  to="/bugs/$bugId"
-                  params={{ bugId: String(bug.id) }}
+                  to="/bugs/$id"
+                  params={{ id: String(bug.id) }}
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
@@ -252,8 +252,8 @@ function MyWorkPage() {
                   </div>
                   {item.bug_id && (
                     <Link
-                      to="/bugs/$bugId"
-                      params={{ bugId: String(item.bug_id) }}
+                      to="/bugs/$id"
+                      params={{ id: String(item.bug_id) }}
                       className="text-xs font-medium text-primary hover:underline"
                     >
                       {t("myWork.inbox.open")}
@@ -276,8 +276,8 @@ function MyWorkPage() {
               atRisk.map((bug) => (
                 <Link
                   key={bug.id}
-                  to="/bugs/$bugId"
-                  params={{ bugId: String(bug.id) }}
+                  to="/bugs/$id"
+                  params={{ id: String(bug.id) }}
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
