@@ -128,6 +128,7 @@ function ChatPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [typingEvents, setTypingEvents] = useState<TypingEvents>({});
   const [typingTick, setTypingTick] = useState(0);
+  const [messageSearch, setMessageSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
