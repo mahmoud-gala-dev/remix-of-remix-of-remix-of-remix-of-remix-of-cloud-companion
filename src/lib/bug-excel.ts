@@ -5,22 +5,7 @@
  * so the template must keep that exact column order.
  */
 
-export const BUG_TEMPLATE_HEADERS = [
-  "Bug ID",
-  "Module",
-  "Title",
-  "Steps to Reproduce",
-  "Environment",
-  "Expected Result",
-  "Actual Result",
-  "Priority",
-  "Severity",
-  "Reported By",
-  "Status",
-  "Retest",
-  "Role",
-  "Notes",
-] as const;
+import { BUG_IMPORT_HEADERS } from "@/lib/bug-import";
 
 const TEMPLATE_HINTS = [
   "BUG-001",
@@ -52,10 +37,10 @@ async function saveSheet(rows: (string | number | null)[][], filename: string, s
 
 /** Template with a title row, the header row, then one example row. */
 export async function downloadBugImportTemplate() {
-  const width = BUG_TEMPLATE_HEADERS.length;
+  const width = BUG_IMPORT_HEADERS.length;
   const titleRow = ["ElectroPI — Bug Import Template", ...Array(width - 1).fill(null)];
   await saveSheet(
-    [titleRow, [...BUG_TEMPLATE_HEADERS], TEMPLATE_HINTS],
+    [titleRow, [...BUG_IMPORT_HEADERS], TEMPLATE_HINTS],
     "electropi-bug-import-template.xlsx",
     "Bugs",
   );

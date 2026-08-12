@@ -1,6 +1,7 @@
 import { BUG_PRIORITIES, BUG_SEVERITIES, BUG_STATUSES } from "@/lib/api";
 
 export type ParsedBugImportRow = {
+  excelRowNumber: number;
   bug_id: string;
   module: string;
   title: string;
@@ -14,6 +15,29 @@ export type ParsedBugImportRow = {
   retest: string;
   role: string;
   notes: string;
+};
+
+export const BUG_IMPORT_HEADERS = [
+  "Bug ID",
+  "Module",
+  "Title",
+  "Steps to Reproduce",
+  "Environment",
+  "Expected Result",
+  "Actual Result",
+  "Priority",
+  "Severity",
+  "Reported By",
+  "Status",
+  "Retest",
+  "Role",
+  "Notes",
+] as const;
+
+export type BugImportValidation = {
+  rows: ParsedBugImportRow[];
+  missingHeaders: string[];
+  unexpectedHeaders: string[];
 };
 
 export function normalizePriority(v: string) {
@@ -34,9 +58,10 @@ export function normalizeStatus(v: string) {
 export function parseBugImportRows(rawData: unknown[][]): ParsedBugImportRow[] {
   return rawData
     .slice(2)
-    .map((row) => {
+    .map((row, index) => {
       const vals = Object.values(row ?? []);
       return {
+        excelRowNumber: index + 3,
         bug_id: vals[0]?.toString() ?? "",
         module: vals[1]?.toString() ?? "",
         title: vals[2]?.toString() ?? "",
@@ -53,4 +78,16 @@ export function parseBugImportRows(rawData: unknown[][]): ParsedBugImportRow[] {
       };
     })
     .filter((row) => row.bug_id.trim() !== "" && row.bug_id !== row.module);
+}
+
+export function validateAndParseBugImportRows(rawData: unknown[][]): BugImportValidation {
+  const headerRow = (rawData[1] ?? []).map((value) => String(value ?? "").trim());
+  const expected = [...BUG_IMPORT_HEADERS];
+  return {
+    rows: parseBugImportRows(rawData),
+    missingHeaders: expected.filter((header, index) => headerRow[index] !== header),
+    unexpectedHeaders: headerRow.filter(
+      (header, index) => Boolean(header) && expected[index] !== header,
+    ),
+  };
 }

@@ -128,6 +128,14 @@
     letter-spacing: 0;
   }
 
+  html[dir="rtl"] button,
+  html[dir="rtl"] input,
+  html[dir="rtl"] textarea,
+  html[dir="rtl"] select {
+    font-family: "IBM Plex Sans Arabic", var(--font-sans);
+    letter-spacing: 0;
+  }
+
 
   h1,
   h2,
