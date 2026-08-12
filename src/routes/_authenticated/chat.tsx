@@ -164,6 +164,12 @@ function ChatPage() {
     queryFn: () => fetchProjectMessages(projectId!),
   });
 
+  const profileNames = useMemo(() => {
+    const map = new Map<string, string>();
+    (profilesQuery.data ?? []).forEach((profile) => map.set(profile.id, profile.username));
+    return map;
+  }, [profilesQuery.data]);
+
   useEffect(() => {
     if (projectId === null) return;
     const channel = supabase
@@ -176,9 +182,20 @@ function ChatPage() {
           table: "project_messages",
           filter: `project_id=eq.${projectId}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["project-messages", projectId] });
           queryClient.invalidateQueries({ queryKey: ["chat-activity"] });
+          /* Toast for incoming messages from teammates, highlighting @mentions. */
+          if (payload.eventType !== "INSERT") return;
+          const row = payload.new as Partial<ProjectMessage>;
+          if (!row.user_id || row.user_id === user?.id) return;
+          const author = profileNames.get(row.user_id) ?? "Member";
+          const body = (row.content ?? "").slice(0, 120);
+          if (mentionsUser(row.content ?? "", user?.username)) {
+            toast.info(t("chat.newMention", { name: author }), { description: body });
+          } else {
+            toast(t("chat.newMessage", { name: author }), { description: body });
+          }
         },
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
@@ -189,7 +206,7 @@ function ChatPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, queryClient]);
+  }, [projectId, queryClient, profileNames, user?.id, user?.username, t]);
 
   /* Typing indicator: a lightweight broadcast channel per project. */
   useEffect(() => {
