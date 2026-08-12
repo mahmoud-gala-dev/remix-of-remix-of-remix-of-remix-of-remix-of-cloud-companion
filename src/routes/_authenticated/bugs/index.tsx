@@ -90,6 +90,7 @@ import {
   saveFilter,
   type SavedFilter,
 } from "@/lib/saved-filters";
+import { writeBugNavFilters } from "@/lib/bug-nav";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
   head: () => ({
