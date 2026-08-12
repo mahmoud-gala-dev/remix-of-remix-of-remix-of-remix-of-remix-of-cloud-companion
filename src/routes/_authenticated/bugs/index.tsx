@@ -76,11 +76,7 @@ import {
   parseBugImportRows,
 } from "@/lib/bug-import";
 import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
-import {
-  BUG_TEMPLATE_HEADERS,
-  downloadBugImportTemplate,
-  downloadBugsExcel,
-} from "@/lib/bug-excel";
+import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
