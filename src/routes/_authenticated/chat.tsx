@@ -456,12 +456,71 @@ function ChatPage() {
         </Card>
 
         <Card className="flex min-h-[60vh] flex-col border-border/60">
-          <CardHeader className="border-b border-border/60 pb-3">
-            <CardTitle className="text-base">
-              {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : t("chat.selectChannel")}
-            </CardTitle>
+          <CardHeader className="space-y-3 border-b border-border/60 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-base">
+                {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : t("chat.selectChannel")}
+              </CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search
+                  className="pointer-events-none absolute inset-y-0 start-2 my-auto h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  value={messageSearch}
+                  onChange={(event) => setMessageSearch(event.target.value)}
+                  placeholder={t("chat.search")}
+                  aria-label={t("chat.search")}
+                  className="h-9 ps-8 pe-8"
+                  disabled={projectId === null}
+                />
+                {messageSearch && (
+                  <button
+                    type="button"
+                    aria-label={t("chat.clearSearch")}
+                    onClick={() => setMessageSearch("")}
+                    className="absolute inset-y-0 end-2 my-auto h-4 w-4 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {pinned.length > 0 && !messageSearch && (
+              <div className="rounded-md border border-border/60 bg-muted/40 p-2">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("chat.pinnedTitle")} ({pinned.length})
+                </p>
+                <ul className="space-y-1">
+                  {pinned.slice(0, 3).map((message) => (
+                    <li key={message.id} className="flex items-center gap-2 text-xs">
+                      <span className="font-medium">
+                        {message.user_id === user?.id ? t("chat.you") : nameFor(message.user_id)}:
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                        {message.content}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t("chat.unpin")}
+                        onClick={() => pin.mutate({ id: Number(message.id), pinned: false })}
+                      >
+                        <PinOff className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4 pt-4">
+            {messageSearch && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("chat.searchResults", { count: messages.length })}
+              </p>
+            )}
             <div className="flex-1 space-y-3 overflow-y-auto pe-1" style={{ maxHeight: "52vh" }}>
               {messagesQuery.isLoading ? (
                 <Skeleton className="h-32 w-full" />
@@ -471,8 +530,9 @@ function ChatPage() {
                 </p>
               ) : messages.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  {t("chat.empty")}
+                  {messageSearch ? t("chat.searchEmpty") : t("chat.empty")}
                 </p>
+
               ) : (
                 messages.map((message, index) => {
                   const mine = message.user_id === user?.id;
