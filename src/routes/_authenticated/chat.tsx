@@ -583,7 +583,7 @@ function ChatPage() {
                                         reactions,
                                         Number(message.id),
                                         user?.id,
-                                      ).find((group) => group.emoji === emoji)?.mine,
+                                      ).find((group) => group.emoji === emoji)?.mine ?? null,
                                     })
                                   }
                                 >
