@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
-import { Shell } from "@/components/layout/Shell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
@@ -33,17 +32,15 @@ function PomodoroPage() {
   const { t } = useI18n();
   const canUse = user?.role === "developer" || user?.role === "admin";
 
+  if (!canUse) {
+    return <p className="p-6 text-sm text-muted-foreground">{t("pomodoro.noAccess")}</p>;
+  }
+
   return (
-    <Shell>
-      {!canUse ? (
-        <p className="p-6 text-sm text-muted-foreground">{t("pomodoro.noAccess")}</p>
-      ) : (
-        <ClientOnly fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
-          <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
-            <PomodoroApp />
-          </Suspense>
-        </ClientOnly>
-      )}
-    </Shell>
+    <ClientOnly fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
+      <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
+        <PomodoroApp />
+      </Suspense>
+    </ClientOnly>
   );
 }
