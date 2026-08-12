@@ -61,6 +61,7 @@ export const Route = createFileRoute("/_authenticated/bugs/$id")({
 });
 
 function BugDetailPage() {
+  const { t } = useI18n();
   const { id } = Route.useParams();
   const bugId = Number(id);
   const navigate = useNavigate();
