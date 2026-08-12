@@ -110,7 +110,6 @@ export function BugComments({
               (user?.id && user.id === c.user_id) ||
               c.user_id === "developer";
             const authorName = getAuthorName(c.user_id);
-            const initials = authorName.slice(0, 2).toUpperCase() || "DV";
 
             return (
               <div key={c.id} className="flex gap-3">
