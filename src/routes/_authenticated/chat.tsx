@@ -255,7 +255,12 @@ function ChatPage() {
     });
   }, [user?.id, user?.username]);
 
-  const messages = messagesQuery.data ?? [];
+  const allMessages = messagesQuery.data ?? [];
+  const messages = useMemo(
+    () => searchMessages(allMessages, messageSearch),
+    [allMessages, messageSearch],
+  );
+  const pinned = useMemo(() => pinnedMessages(allMessages), [allMessages]);
   const byId = useMemo(() => {
     const map = new Map<number, ProjectMessage>();
     messages.forEach((message) => map.set(Number(message.id), message));
