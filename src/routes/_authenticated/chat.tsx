@@ -376,6 +376,18 @@ function ChatPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const pin = useMutation({
+    mutationFn: ({ id, pinned }: { id: number; pinned: boolean }) =>
+      setMessagePinned(id, pinned, user!.id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["project-messages", projectId] });
+      toast.success(variables.pinned ? t("chat.pinnedToast") : t("chat.unpinnedToast"));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
+
   const activeProject = projects.find((project) => Number(project.id) === projectId);
   const canSubmit =
     projectId !== null && (draft.trim().length > 0 || (!editing && pendingFile !== null));
