@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -76,6 +76,22 @@ import {
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
   validateSearch: (search: Record<string, unknown>): BugsSearch => parseBugsSearch(search),
+  // Default values stay out of the URL so shared links only carry real filters.
+  search: {
+    middlewares: [
+      stripSearchParams({
+        q: "",
+        module: "All",
+        status: "All",
+        priority: "All",
+        severity: "All",
+        project: "All",
+        assignee: "All",
+        page: 1,
+        view: "table" as const,
+      }),
+    ],
+  },
   head: () => ({
     meta: [
       { title: "Bugs | ElectroPI Bug Tracker" },
