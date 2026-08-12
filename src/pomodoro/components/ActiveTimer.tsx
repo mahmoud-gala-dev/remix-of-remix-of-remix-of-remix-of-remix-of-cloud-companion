@@ -30,7 +30,8 @@ export function ActiveTimer({
   compact?: boolean;
 }) {
   const progress = total > 0 ? 1 - remaining / total : 0;
-  const size = compact ? 320 : 240;
+  /* Fixed viewBox + fluid width keeps the ring crisp on phones and desktops. */
+  const size = 240;
   const stroke = compact ? 14 : 12;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -41,8 +42,10 @@ export function ActiveTimer({
         {phaseLabel(lang, phase)}
       </p>
 
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
+      <div
+        className={`relative aspect-square w-full ${compact ? "max-w-[320px]" : "max-w-[240px]"}`}
+      >
+        <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full -rotate-90">
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -65,7 +68,7 @@ export function ActiveTimer({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-5xl font-semibold tabular-nums">
+          <span className="font-mono text-4xl font-semibold tabular-nums sm:text-5xl">
             {formatClock(remaining)}
           </span>
           <span className="mt-1 text-xs pomo-muted">
@@ -76,7 +79,7 @@ export function ActiveTimer({
 
       <p className="max-w-xs text-center text-sm pomo-muted">{quote}</p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           type="button"
           onClick={onToggle}
