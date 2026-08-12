@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -72,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/chat")({
 type TypingEvents = Record<string, { username: string; at: number }>;
 
 function AttachmentLink({ path, name }: { path: string; name: string }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const open = async () => {
     setBusy(true);
@@ -79,7 +81,7 @@ function AttachmentLink({ path, name }: { path: string; name: string }) {
       const url = await chatAttachmentUrl(path);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not open the file.");
+      toast.error(error instanceof Error ? error.message : t("chat.openFileError"));
     } finally {
       setBusy(false);
     }
@@ -101,6 +103,7 @@ function AttachmentLink({ path, name }: { path: string; name: string }) {
 }
 
 function ChatPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -303,7 +306,7 @@ function ChatPage() {
     mutationFn: (id: number) => deleteProjectMessage(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-messages", projectId] });
-      toast.success("Message deleted");
+      toast.success(t("chat.deleted"));
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -325,26 +328,21 @@ function ChatPage() {
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <MessagesSquare className="h-6 w-6" />
-          Team Chat
+          {t("chat.title")}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Interactive chat between the members of each project — mention a teammate with{" "}
-          <span className="font-medium">@username</span>, reply to a message, or attach a file.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("chat.subtitle")}</p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <Card className="border-border/60">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Project channels</CardTitle>
+            <CardTitle className="text-base">{t("chat.channels")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
             {projectsQuery.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : projects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No projects yet. Create a project to start a channel.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("chat.noProjects")}</p>
             ) : (
               projects.map((project) => {
                 const count = unread[Number(project.id)] ?? 0;
@@ -383,7 +381,7 @@ function ChatPage() {
         <Card className="flex min-h-[60vh] flex-col border-border/60">
           <CardHeader className="border-b border-border/60 pb-3">
             <CardTitle className="text-base">
-              {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : "Select a channel"}
+              {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : t("chat.selectChannel")}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4 pt-4">
@@ -392,11 +390,11 @@ function ChatPage() {
                 <Skeleton className="h-32 w-full" />
               ) : messagesQuery.isError ? (
                 <p className="py-10 text-center text-sm text-destructive">
-                  Could not load this channel. Please retry.
+                  {t("chat.loadError")}
                 </p>
               ) : messages.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  No messages yet. Say hello to your project team.
+                  {t("chat.empty")}
                 </p>
               ) : (
                 messages.map((message, index) => {
@@ -433,18 +431,18 @@ function ChatPage() {
                           )}
                         >
                           <div className="mb-0.5 flex items-center gap-2 text-xs opacity-75">
-                            <span className="font-medium">{mine ? "You" : author}</span>
+                            <span className="font-medium">{mine ? t("chat.you") : author}</span>
                             <span>{messageTime(message.created_at)}</span>
-                            {message.edited_at && <span>(edited)</span>}
+                            {message.edited_at && <span>{t("chat.edited")}</span>}
                             {forMe && (
                               <span className="flex items-center gap-0.5 font-medium">
                                 <AtSign className="h-3 w-3" aria-hidden="true" />
-                                you
+                                {t("chat.mentionedYou")}
                               </span>
                             )}
                             <button
                               type="button"
-                              aria-label="Reply to message"
+                              aria-label={t("chat.reply")}
                               className="opacity-0 transition-opacity group-hover:opacity-100"
                               onClick={() => {
                                 setEditing(null);
@@ -457,7 +455,7 @@ function ChatPage() {
                             {mine && (
                               <button
                                 type="button"
-                                aria-label="Edit message"
+                                aria-label={t("chat.edit")}
                                 className="opacity-0 transition-opacity group-hover:opacity-100"
                                 onClick={() => startEdit(message)}
                               >
@@ -467,7 +465,7 @@ function ChatPage() {
                             {(mine || isStaffRole(user?.role)) && (
                               <button
                                 type="button"
-                                aria-label="Delete message"
+                                aria-label={t("chat.deleteMessage")}
                                 className="opacity-0 transition-opacity group-hover:opacity-100"
                                 onClick={() => remove.mutate(Number(message.id))}
                               >
@@ -486,7 +484,7 @@ function ChatPage() {
                               )}
                             >
                               <span className="font-medium">
-                                {parent.user_id === user?.id ? "You" : nameFor(parent.user_id)}
+                                {parent.user_id === user?.id ? t("chat.you") : nameFor(parent.user_id)}
                               </span>
                               <span className="ms-1 line-clamp-2 opacity-80">{parent.content}</span>
                             </div>
@@ -513,7 +511,7 @@ function ChatPage() {
                           {message.attachment_path && (
                             <AttachmentLink
                               path={message.attachment_path}
-                              name={message.attachment_name ?? "Attachment"}
+                              name={message.attachment_name ?? t("chat.attachment")}
                             />
                           )}
                         </div>
@@ -539,7 +537,7 @@ function ChatPage() {
               {(replyTo || editing || pendingFile) && (
                 <div className="mb-2 flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 px-3 py-2 text-xs">
                   <span className="font-medium">
-                    {editing ? "Editing message" : replyTo ? "Replying to" : "Attachment"}
+                    {editing ? t("chat.editing") : replyTo ? t("chat.replyingTo") : t("chat.attachment")}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-muted-foreground">
                     {editing
@@ -550,7 +548,7 @@ function ChatPage() {
                   </span>
                   <button
                     type="button"
-                    aria-label="Cancel"
+                    aria-label={t("common.cancel")}
                     onClick={() => {
                       if (editing) setDraft("");
                       setEditing(null);
@@ -594,7 +592,7 @@ function ChatPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  aria-label="Attach a file"
+                  aria-label={t("chat.attach")}
                   disabled={projectId === null || editing !== null}
                   onClick={() => fileRef.current?.click()}
                 >
@@ -614,8 +612,8 @@ function ChatPage() {
                   onBlur={() => setTimeout(() => setMentionQuery(null), 150)}
                   placeholder={
                     projectId === null
-                      ? "Select a project channel first"
-                      : "Write a message… use @ to mention"
+                      ? t("chat.selectProjectFirst")
+                      : t("chat.placeholder")
                   }
                   disabled={projectId === null}
                   rows={2}
@@ -635,7 +633,7 @@ function ChatPage() {
                 <Button
                   type="submit"
                   disabled={!canSubmit || send.isPending}
-                  aria-label={editing ? "Save message" : "Send message"}
+                  aria-label={editing ? t("chat.saveMessage") : t("chat.send")}
                 >
                   {send.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
