@@ -325,6 +325,14 @@ function BugDetailPage() {
           <BugHistoryTimeline bugId={bug.id} profileMap={profileMap} />
         </div>
       </div>
+
+      {/* Next 10 bugs in the same filtered order the user was browsing */}
+      <BugNextTen
+        currentId={bug.id}
+        order={bugOrder}
+        label={t("bug.nextTen")}
+        emptyLabel={t("bug.nextTen.empty")}
+      />
     </div>
   );
 }
