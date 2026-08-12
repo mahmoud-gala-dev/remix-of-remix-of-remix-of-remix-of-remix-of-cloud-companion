@@ -86,17 +86,21 @@ export function parseBugImportRows(rawData: unknown[][]): ParsedBugImportRow[] {
         notes: vals[13]?.toString() ?? "",
       };
     })
-    .filter((row) => row.bug_id.trim() !== "" && row.bug_id !== row.module);
+    .filter((row) => !isEmptyImportRow(row) && row.bug_id !== row.module);
 }
 
 export function validateAndParseBugImportRows(rawData: unknown[][]): BugImportValidation {
   const headerRow = (rawData[1] ?? []).map((value) => String(value ?? "").trim());
   const expected = [...BUG_IMPORT_HEADERS];
+  const rows = parseBugImportRows(rawData);
+  const dataRowCount = rawData.slice(2).length;
   return {
-    rows: parseBugImportRows(rawData),
+    rows,
     missingHeaders: expected.filter((header, index) => headerRow[index] !== header),
     unexpectedHeaders: headerRow.filter(
       (header, index) => Boolean(header) && expected[index] !== header,
     ),
+    skippedEmpty: Math.max(dataRowCount - rows.length, 0),
   };
 }
+
