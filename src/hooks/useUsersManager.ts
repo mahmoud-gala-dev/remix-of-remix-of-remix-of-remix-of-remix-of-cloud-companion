@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import type { CreateUserData, User, UserRole, UserStats } from "@/types/user-management";
 import {
   createManagedUser,
