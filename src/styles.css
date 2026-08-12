@@ -185,3 +185,7 @@
     break-inside: avoid;
   }
 }
+
+aside#lovable-badge {
+  display: none !important;
+}
