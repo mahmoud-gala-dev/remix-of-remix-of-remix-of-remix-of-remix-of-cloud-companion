@@ -14,11 +14,11 @@ export type TodoItem = {
   id: string;
   text: string;
   completed: boolean;
-  completedAt?: number;
+  completedAt?: number | undefined;
   createdAt: number;
-  archived?: boolean;
-  category?: string;
-  priority?: Priority;
+  archived?: boolean | undefined;
+  category?: string | undefined;
+  priority?: Priority | undefined;
 };
 
 export type LogItem = {
@@ -27,7 +27,7 @@ export type LogItem = {
   /** Completed length in minutes. */
   duration: number;
   completedAt: number;
-  taskText?: string;
+  taskText?: string | undefined;
 };
 
 export type AppSettings = {
