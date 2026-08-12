@@ -14,6 +14,7 @@ import {
   List,
   Plus,
   RefreshCw,
+  FileSpreadsheet,
   Save,
   Search,
   ShieldAlert,
@@ -75,6 +76,8 @@ import {
   parseBugImportRows,
 } from "@/lib/bug-import";
 import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
+import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
+import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
@@ -368,6 +371,7 @@ function MiniKpi({
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 function BugsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
@@ -552,6 +556,49 @@ function BugsPage() {
     toast.success("CSV exported", { description: `Exported ${rows.length} visible bugs.` });
   }, [rows, projectMap, profileMap]);
 
+  /** Exports the visible rows as .xlsx (same columns as the list view). */
+  const exportVisibleExcel = useCallback(async () => {
+    const headers = [
+      "Bug ID",
+      "Title",
+      "Module",
+      "Status",
+      "Priority",
+      "Severity",
+      "Project",
+      "Assignee",
+      "Created At",
+    ];
+    const data = rows.map((bug) => [
+      bug.bug_id,
+      bug.title,
+      bug.module,
+      bug.status,
+      bug.priority,
+      bug.severity,
+      bug.project_id ? (projectMap.get(bug.project_id) ?? "") : "",
+      bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "") : "",
+      bug.created_at,
+    ]);
+    try {
+      await downloadBugsExcel(data, headers, `${datedCsvFilename("bugs")}.xlsx`);
+      toast.success(t("bugs.toast.excel"), {
+        description: t("bugs.toast.excelDesc", { count: rows.length }),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export failed");
+    }
+  }, [rows, projectMap, profileMap, t]);
+
+  const downloadTemplate = useCallback(async () => {
+    try {
+      await downloadBugImportTemplate();
+      toast.success(t("bugs.toast.template"), { description: t("bugs.toast.templateDesc") });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Download failed");
+    }
+  }, [t]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -629,11 +676,9 @@ function BugsPage() {
     <div className="space-y-5 max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bug Tracker</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("bugs.title")}</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {isLoading
-              ? "Loading…"
-              : `${totalCount} bug${totalCount === 1 ? "" : "s"} matching filters`}
+            {isLoading ? t("common.loading") : t("bugs.summary", { count: totalCount })}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -641,7 +686,7 @@ function BugsPage() {
           <div
             className="inline-flex rounded-md border border-border p-0.5"
             role="group"
-            aria-label="Bug view"
+            aria-label={t("bugs.view")}
           >
             <Button
               variant={view === "table" ? "secondary" : "ghost"}
@@ -651,7 +696,7 @@ function BugsPage() {
               className="h-8"
             >
               <List className="me-1.5 h-4 w-4" aria-hidden="true" />
-              List
+              {t("bugs.view.list")}
             </Button>
             <Button
               variant={view === "board" ? "secondary" : "ghost"}
@@ -661,7 +706,7 @@ function BugsPage() {
               className="h-8"
             >
               <KanbanSquare className="me-1.5 h-4 w-4" aria-hidden="true" />
-              Board
+              {t("bugs.view.board")}
             </Button>
           </div>
           {/* Stats toggle */}
@@ -674,12 +719,12 @@ function BugsPage() {
             {showStats ? (
               <>
                 <ChevronUp className="me-1.5 h-4 w-4" />
-                Hide stats
+                {t("bugs.hideStats")}
               </>
             ) : (
               <>
                 <ChevronDown className="me-1.5 h-4 w-4" />
-                Show stats
+                {t("bugs.showStats")}
               </>
             )}
           </Button>
@@ -690,13 +735,26 @@ function BugsPage() {
             size="sm"
           >
             <Download className="me-2 h-4 w-4" />
-            Export CSV
+            {t("bugs.exportCsv")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => void exportVisibleExcel()}
+            disabled={isLoading || rows.length === 0}
+            size="sm"
+          >
+            <FileSpreadsheet className="me-2 h-4 w-4" />
+            {t("bugs.exportExcel")}
+          </Button>
+          <Button variant="outline" onClick={() => void downloadTemplate()} size="sm">
+            <Download className="me-2 h-4 w-4" />
+            {t("bugs.template")}
           </Button>
           <label className="cursor-pointer">
             <Button variant="outline" asChild disabled={importing} size="sm">
               <span>
                 <FileUp className="me-2 h-4 w-4" />
-                {importing ? "Importing..." : "Import Excel"}
+                {importing ? t("bugs.importing") : t("bugs.import")}
               </span>
             </Button>
             <input
@@ -711,7 +769,7 @@ function BugsPage() {
             <Button size="sm" asChild>
               <Link to="/bugs/new">
                 <Plus className="me-2 h-4 w-4" />
-                New Bug
+                {t("bugs.new")}
               </Link>
             </Button>
           )}
@@ -992,17 +1050,17 @@ function BugsPage() {
                         onCheckedChange={(checked) =>
                           setSelectedIds(checked ? selectableRows.map((bug) => bug.id) : [])
                         }
-                        aria-label="Select all visible editable bugs"
+                        aria-label={t("bugs.selectAll")}
                       />
                     </TableHead>
-                    <TableHead>Bug ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Module</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Assignee</TableHead>
+                    <TableHead>{t("bugs.col.id")}</TableHead>
+                    <TableHead>{t("bugs.col.title")}</TableHead>
+                    <TableHead>{t("bugs.col.module")}</TableHead>
+                    <TableHead>{t("bugs.col.status")}</TableHead>
+                    <TableHead>{t("bugs.col.priority")}</TableHead>
+                    <TableHead>{t("bugs.col.severity")}</TableHead>
+                    <TableHead>{t("bugs.col.project")}</TableHead>
+                    <TableHead>{t("bugs.col.assignee")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1013,7 +1071,7 @@ function BugsPage() {
                           checked={selectedIds.includes(bug.id)}
                           disabled={!canChangeBugStatus(bug, user)}
                           onCheckedChange={(checked) => toggleSelected(bug.id, checked === true)}
-                          aria-label={`Select bug ${bug.bug_id}`}
+                          aria-label={t("bugs.selectOne", { id: bug.bug_id })}
                         />
                       </TableCell>
                       <TableCell className="font-medium">
@@ -1059,16 +1117,16 @@ function BugsPage() {
                         {bug.project_id ? (projectMap.get(bug.project_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell>
-                        {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : "Unassigned"}
+                        {bug.assigned_to
+                          ? (profileMap.get(bug.assigned_to) ?? "—")
+                          : t("bugs.unassigned")}
                       </TableCell>
                     </TableRow>
                   ))}
                   {rows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
-                        {hasActiveFilters
-                          ? "No bugs match your filters. Try loading another saved filter or reset filters."
-                          : "No bugs have been reported yet."}
+                        {hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -1088,10 +1146,10 @@ function BugsPage() {
                       checked={selectedIds.includes(bug.id)}
                       disabled={!canChangeBugStatus(bug, user)}
                       onCheckedChange={(checked) => toggleSelected(bug.id, checked === true)}
-                      aria-label={`Select bug ${bug.bug_id}`}
+                      aria-label={t("bugs.selectOne", { id: bug.bug_id })}
                     />
                     <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Bulk select
+                      {t("bugs.bulkSelect")}
                     </span>
                   </div>
                   <Link
@@ -1111,7 +1169,9 @@ function BugsPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {bug.module} ·{" "}
-                      {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : "Unassigned"}
+                      {bug.assigned_to
+                        ? (profileMap.get(bug.assigned_to) ?? "—")
+                        : t("bugs.unassigned")}
                     </p>
                   </Link>
                   <div className="mt-2.5 flex items-center justify-between gap-2">
@@ -1128,9 +1188,7 @@ function BugsPage() {
               ))}
               {rows.length === 0 && (
                 <li className="py-10 text-center text-sm text-muted-foreground">
-                  {hasActiveFilters
-                    ? "No bugs match your filters. Try loading another saved filter or reset filters."
-                    : "No bugs have been reported yet."}
+                  {hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
                 </li>
               )}
             </ul>
@@ -1144,27 +1202,27 @@ function BugsPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-muted-foreground">
-              Page {safePage} of {totalPages}
-              {isFetching ? " · updating…" : ""}
+              {t("bugs.page", { page: safePage, pages: totalPages })}
+              {isFetching ? t("bugs.updating") : ""}
             </p>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                aria-label="Previous page"
+                aria-label={t("common.previous")}
                 disabled={safePage <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                Previous
+                {t("common.previous")}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                aria-label="Next page"
+                aria-label={t("common.next")}
                 disabled={safePage >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               >
-                Next
+                {t("common.next")}
               </Button>
             </div>
           </div>
