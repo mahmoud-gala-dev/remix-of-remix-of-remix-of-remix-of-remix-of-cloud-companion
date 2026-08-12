@@ -4,6 +4,8 @@ import {
   normalizeSeverity,
   normalizeStatus,
   parseBugImportRows,
+  validateAndParseBugImportRows,
+  BUG_IMPORT_HEADERS,
 } from "@/lib/bug-import";
 
 describe("bug import helpers", () => {
@@ -47,5 +49,18 @@ describe("bug import helpers", () => {
         status: "Open",
       }),
     ]);
+  });
+
+  it("validates the template header row and preserves Excel row numbers", () => {
+    const valid = validateAndParseBugImportRows([
+      ["title"],
+      [...BUG_IMPORT_HEADERS],
+      ["BUG-9", "Checkout", "Payment fails"],
+    ]);
+    expect(valid.missingHeaders).toEqual([]);
+    expect(valid.rows[0]?.excelRowNumber).toBe(3);
+
+    const invalid = validateAndParseBugImportRows([["title"], ["Wrong header"]]);
+    expect(invalid.missingHeaders).toContain("Bug ID");
   });
 });

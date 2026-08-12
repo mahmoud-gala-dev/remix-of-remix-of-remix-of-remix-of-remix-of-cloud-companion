@@ -48,11 +48,10 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
           .eq("bug_id", bugId)
           .order("created_at", { ascending: true });
 
-        if (!error && data) {
-          dbComments = data as Comment[];
-        }
-      } catch {
-        // Fallback to local storage when database query is unavailable
+        if (error) throw error;
+        if (data) dbComments = data as Comment[];
+      } catch (error) {
+        if (localMocks.length === 0) throw error;
       }
 
       // Merge DB comments with local mock comments to prevent losing newly created comments
@@ -80,7 +79,6 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
 
-      saveLocalMockComments(bugId, normalized);
       return normalized;
     },
   });
@@ -105,26 +103,21 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
         created_at: now,
       };
 
-      // Try inserting to DB
-      try {
-        const { data, error } = await supabase
-          .from("comments")
-          .insert({
-            bug_id: bugId,
-            user_id: activeUserId,
-            content,
-            created_at: now,
-          })
-          .select()
-          .single();
-
-        if (!error && data) {
-          newCommentRow.id = data.id;
-          newCommentRow.created_at = data.created_at || now;
-          if (data.user_id) newCommentRow.user_id = data.user_id;
-        }
-      } catch {
-        // If DB fails, local storage fallback will retain the comment
+      const { data, error } = await supabase
+        .from("comments")
+        .insert({
+          bug_id: bugId,
+          user_id: activeUserId,
+          content,
+          created_at: now,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      if (data) {
+        newCommentRow.id = data.id;
+        newCommentRow.created_at = data.created_at || now;
+        if (data.user_id) newCommentRow.user_id = data.user_id;
       }
 
       // Persist in local storage
@@ -172,11 +165,8 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
 
   const updateComment = useMutation({
     mutationFn: async ({ id, content }: { id: number; content: string }) => {
-      try {
-        await supabase.from("comments").update({ content }).eq("id", id);
-      } catch (error) {
-        ignoreLocalPersistenceError(error);
-      }
+      const { error } = await supabase.from("comments").update({ content }).eq("id", id);
+      if (error) throw error;
 
       const localList = getLocalMockComments(bugId).map((c) =>
         c.id === id ? { ...c, content } : c,
@@ -202,11 +192,8 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
 
   const deleteComment = useMutation({
     mutationFn: async (id: number) => {
-      try {
-        await supabase.from("comments").delete().eq("id", id);
-      } catch (error) {
-        ignoreLocalPersistenceError(error);
-      }
+      const { error } = await supabase.from("comments").delete().eq("id", id);
+      if (error) throw error;
 
       const localList = getLocalMockComments(bugId).filter((c) => c.id !== id);
       saveLocalMockComments(bugId, localList);
@@ -231,6 +218,7 @@ export function useBugComments(bugId: number, currentUserId: string | null) {
   return {
     comments: commentsQuery.data ?? getLocalMockComments(bugId),
     isLoading: commentsQuery.isLoading,
+    error: commentsQuery.error instanceof Error ? commentsQuery.error : null,
     addComment,
     updateComment,
     deleteComment,

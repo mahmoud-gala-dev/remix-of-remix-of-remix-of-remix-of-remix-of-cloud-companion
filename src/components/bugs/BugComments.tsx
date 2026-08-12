@@ -67,7 +67,7 @@ export function BugComments({
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
-  const { comments, addComment, updateComment, deleteComment } = useBugComments(
+  const { comments, isLoading, error, addComment, updateComment, deleteComment } = useBugComments(
     bugId,
     currentUserId,
   );
@@ -100,6 +100,12 @@ export function BugComments({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
+          {isLoading && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+          {error && (
+            <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              {t("bug.comments.loadError")}: {error.message}
+            </p>
+          )}
           {comments.map((c) => {
             const isOwner =
               currentUserId === c.user_id ||
@@ -184,7 +190,7 @@ export function BugComments({
               </div>
             );
           })}
-          {comments.length === 0 && (
+          {!isLoading && !error && comments.length === 0 && (
             <p className="text-sm text-muted-foreground">{t("bug.comments.empty")}</p>
           )}
         </div>
