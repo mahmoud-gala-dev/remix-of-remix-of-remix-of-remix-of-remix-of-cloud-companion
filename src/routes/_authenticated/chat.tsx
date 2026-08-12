@@ -33,7 +33,10 @@ import {
   mentionsUser,
   messageDay,
   messageTime,
+  pinnedMessages,
+  searchMessages,
   sendProjectMessage,
+  setMessagePinned,
   splitMentions,
   typingLabel,
   unreadByProject,
@@ -44,6 +47,7 @@ import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-bou
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
