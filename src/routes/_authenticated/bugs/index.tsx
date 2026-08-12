@@ -110,6 +110,8 @@ type ImportReport = {
   filename: string;
   imported: number;
   failures: ImportFailure[];
+  skippedEmpty: number;
+  duplicates: number;
 };
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
