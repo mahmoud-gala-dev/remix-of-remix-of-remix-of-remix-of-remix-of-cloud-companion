@@ -302,6 +302,7 @@ export const dictionaries = {
     "nav.tasks": "المهام ذات الأولوية",
     "nav.projects": "المشاريع",
     "nav.chat": "شات الفريق",
+    "nav.improvements": "تطوير الاسكريبت",
     "nav.activity": "سجل النشاط",
     "nav.resolutionTimes": "أوقات الحل",
     "nav.analytics": "التحليلات",
