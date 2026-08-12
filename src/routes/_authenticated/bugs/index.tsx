@@ -375,6 +375,7 @@ function MiniKpi({
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 function BugsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
