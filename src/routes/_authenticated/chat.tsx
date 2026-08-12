@@ -173,6 +173,9 @@ function ChatPage() {
           queryClient.invalidateQueries({ queryKey: ["chat-activity"] });
         },
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["chat-reactions"] });
+      })
       .subscribe();
 
     return () => {
