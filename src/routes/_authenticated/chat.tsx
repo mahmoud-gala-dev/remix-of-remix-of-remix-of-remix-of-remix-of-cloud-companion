@@ -543,6 +543,55 @@ function ChatPage() {
                               name={message.attachment_name ?? t("chat.attachment")}
                             />
                           )}
+
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                            {groupReactions(reactions, Number(message.id), user?.id).map((group) => (
+                              <button
+                                key={group.emoji}
+                                type="button"
+                                disabled={!user}
+                                onClick={() =>
+                                  react.mutate({
+                                    messageId: Number(message.id),
+                                    emoji: group.emoji,
+                                    existingId: group.mine,
+                                  })
+                                }
+                                className={cn(
+                                  "rounded-full border px-1.5 py-0.5 text-xs transition-colors",
+                                  group.mine
+                                    ? "border-primary bg-primary/15 text-foreground"
+                                    : "border-border/60 bg-background/60 text-foreground hover:bg-muted",
+                                )}
+                              >
+                                {group.emoji} {group.count}
+                              </button>
+                            ))}
+                            <span className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              {QUICK_REACTIONS.slice(0, 4).map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  aria-label={`${t("chat.reactions")} ${emoji}`}
+                                  disabled={!user}
+                                  className="rounded-full px-1 text-xs hover:scale-125"
+                                  onClick={() =>
+                                    react.mutate({
+                                      messageId: Number(message.id),
+                                      emoji,
+                                      existingId: groupReactions(
+                                        reactions,
+                                        Number(message.id),
+                                        user?.id,
+                                      ).find((group) => group.emoji === emoji)?.mine,
+                                    })
+                                  }
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
