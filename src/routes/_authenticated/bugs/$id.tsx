@@ -41,6 +41,7 @@ import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
 import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
 import { BugResolutionTimer } from "@/components/bugs/BugResolutionTimer";
+import { BugNextTen } from "@/components/bugs/BugNextTen";
 
 export const Route = createFileRoute("/_authenticated/bugs/$id")({
   head: () => ({
