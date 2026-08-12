@@ -676,6 +676,14 @@ function ChatPage() {
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
+                <EmojiPicker
+                  label={t("chat.reactions")}
+                  disabled={projectId === null}
+                  onPick={(emoji) => {
+                    setDraft((current) => `${current}${emoji}`);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                />
                 <Textarea
                   ref={inputRef}
                   value={draft}
