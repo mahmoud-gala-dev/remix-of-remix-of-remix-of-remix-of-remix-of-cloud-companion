@@ -663,8 +663,11 @@ function BugsPage() {
         } = await supabase.auth.getUser();
 
         let imported = 0;
+        let duplicates = 0;
         const failures: ImportFailure[] = [];
-        for (const row of parsedRows) {
+        setImportProgress({ current: 0, total: parsedRows.length });
+        for (const [index, row] of parsedRows.entries()) {
+          setImportProgress({ current: index + 1, total: parsedRows.length });
           if (!row.bug_id.trim()) {
             failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyId") });
             continue;
@@ -675,6 +678,7 @@ function BugsPage() {
           }
           const existingBugId = existingIds.get(row.bug_id);
           if (existingBugId) {
+            duplicates++;
             failures.push({
               excelRowNumber: row.excelRowNumber,
               bugId: row.bug_id,
@@ -716,13 +720,30 @@ function BugsPage() {
           }
         }
 
-        setImportReport({ filename: file.name, imported, failures });
+        setImportReport({
+          filename: file.name,
+          imported,
+          failures,
+          skippedEmpty: validation.skippedEmpty,
+          duplicates,
+        });
+        if (validation.skippedEmpty > 0) {
+          toast.warning(t("bugs.import.skippedEmpty", { count: validation.skippedEmpty }));
+        }
+        if (duplicates > 0) {
+          toast.error(
+            imported === 0
+              ? t("bugs.import.allDuplicates")
+              : t("bugs.import.duplicateToast", { count: duplicates }),
+          );
+        }
         toast.success(t("bugs.import.reportTitle"), {
           description: t("bugs.import.reportDescription", { imported, failed: failures.length }),
         });
         queryClient.invalidateQueries({ queryKey: ["bugs"] });
         queryClient.invalidateQueries({ queryKey: ["bug-modules"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
       } catch (err) {
         toast.error("Import failed", {
           description: err instanceof Error ? err.message : "Failed to parse Excel file.",
