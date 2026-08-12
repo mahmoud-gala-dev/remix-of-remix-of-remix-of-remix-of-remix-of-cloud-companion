@@ -8,7 +8,10 @@ import {
   MessagesSquare,
   Paperclip,
   Pencil,
+  Pin,
+  PinOff,
   Reply,
+  Search,
   Send,
   Trash2,
   X,
@@ -30,7 +33,10 @@ import {
   mentionsUser,
   messageDay,
   messageTime,
+  pinnedMessages,
+  searchMessages,
   sendProjectMessage,
+  setMessagePinned,
   splitMentions,
   typingLabel,
   unreadByProject,
@@ -41,6 +47,7 @@ import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-bou
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +128,7 @@ function ChatPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [typingEvents, setTypingEvents] = useState<TypingEvents>({});
   const [typingTick, setTypingTick] = useState(0);
+  const [messageSearch, setMessageSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -156,6 +164,12 @@ function ChatPage() {
     queryFn: () => fetchProjectMessages(projectId!),
   });
 
+  const profileNames = useMemo(() => {
+    const map = new Map<string, string>();
+    (profilesQuery.data ?? []).forEach((profile) => map.set(profile.id, profile.username));
+    return map;
+  }, [profilesQuery.data]);
+
   useEffect(() => {
     if (projectId === null) return;
     const channel = supabase
@@ -168,9 +182,20 @@ function ChatPage() {
           table: "project_messages",
           filter: `project_id=eq.${projectId}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["project-messages", projectId] });
           queryClient.invalidateQueries({ queryKey: ["chat-activity"] });
+          /* Toast for incoming messages from teammates, highlighting @mentions. */
+          if (payload.eventType !== "INSERT") return;
+          const row = payload.new as Partial<ProjectMessage>;
+          if (!row.user_id || row.user_id === user?.id) return;
+          const author = profileNames.get(row.user_id) ?? "Member";
+          const body = (row.content ?? "").slice(0, 120);
+          if (mentionsUser(row.content ?? "", user?.username)) {
+            toast.info(t("chat.newMention", { name: author }), { description: body });
+          } else {
+            toast(t("chat.newMessage", { name: author }), { description: body });
+          }
         },
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
@@ -181,7 +206,7 @@ function ChatPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, queryClient]);
+  }, [projectId, queryClient, profileNames, user?.id, user?.username, t]);
 
   /* Typing indicator: a lightweight broadcast channel per project. */
   useEffect(() => {
@@ -230,14 +255,22 @@ function ChatPage() {
     });
   }, [user?.id, user?.username]);
 
-  const messages = messagesQuery.data ?? [];
+  const allMessages = messagesQuery.data ?? [];
+  const messages = useMemo(
+    () => searchMessages(allMessages, messageSearch),
+    [allMessages, messageSearch],
+  );
+  const pinned = useMemo(() => pinnedMessages(allMessages), [allMessages]);
   const byId = useMemo(() => {
     const map = new Map<number, ProjectMessage>();
-    messages.forEach((message) => map.set(Number(message.id), message));
+    allMessages.forEach((message) => map.set(Number(message.id), message));
     return map;
-  }, [messages]);
+  }, [allMessages]);
 
-  const messageIds = useMemo(() => messages.map((message) => Number(message.id)), [messages]);
+  const messageIds = useMemo(
+    () => allMessages.map((message) => Number(message.id)),
+    [allMessages],
+  );
   const reactionsQuery = useQuery({
     queryKey: ["chat-reactions", projectId, messageIds.length],
     queryFn: () => fetchReactions(messageIds),
@@ -343,6 +376,18 @@ function ChatPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const pin = useMutation({
+    mutationFn: ({ id, pinned }: { id: number; pinned: boolean }) =>
+      setMessagePinned(id, pinned, user!.id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["project-messages", projectId] });
+      toast.success(variables.pinned ? t("chat.pinnedToast") : t("chat.unpinnedToast"));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
+
   const activeProject = projects.find((project) => Number(project.id) === projectId);
   const canSubmit =
     projectId !== null && (draft.trim().length > 0 || (!editing && pendingFile !== null));
@@ -411,12 +456,71 @@ function ChatPage() {
         </Card>
 
         <Card className="flex min-h-[60vh] flex-col border-border/60">
-          <CardHeader className="border-b border-border/60 pb-3">
-            <CardTitle className="text-base">
-              {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : t("chat.selectChannel")}
-            </CardTitle>
+          <CardHeader className="space-y-3 border-b border-border/60 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-base">
+                {activeProject ? `# ${activeProject.key} — ${activeProject.name}` : t("chat.selectChannel")}
+              </CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search
+                  className="pointer-events-none absolute inset-y-0 start-2 my-auto h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  value={messageSearch}
+                  onChange={(event) => setMessageSearch(event.target.value)}
+                  placeholder={t("chat.search")}
+                  aria-label={t("chat.search")}
+                  className="h-9 ps-8 pe-8"
+                  disabled={projectId === null}
+                />
+                {messageSearch && (
+                  <button
+                    type="button"
+                    aria-label={t("chat.clearSearch")}
+                    onClick={() => setMessageSearch("")}
+                    className="absolute inset-y-0 end-2 my-auto h-4 w-4 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {pinned.length > 0 && !messageSearch && (
+              <div className="rounded-md border border-border/60 bg-muted/40 p-2">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("chat.pinnedTitle")} ({pinned.length})
+                </p>
+                <ul className="space-y-1">
+                  {pinned.slice(0, 3).map((message) => (
+                    <li key={message.id} className="flex items-center gap-2 text-xs">
+                      <span className="font-medium">
+                        {message.user_id === user?.id ? t("chat.you") : nameFor(message.user_id)}:
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                        {message.content}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t("chat.unpin")}
+                        onClick={() => pin.mutate({ id: Number(message.id), pinned: false })}
+                      >
+                        <PinOff className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4 pt-4">
+            {messageSearch && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("chat.searchResults", { count: messages.length })}
+              </p>
+            )}
             <div className="flex-1 space-y-3 overflow-y-auto pe-1" style={{ maxHeight: "52vh" }}>
               {messagesQuery.isLoading ? (
                 <Skeleton className="h-32 w-full" />
@@ -426,8 +530,9 @@ function ChatPage() {
                 </p>
               ) : messages.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  {t("chat.empty")}
+                  {messageSearch ? t("chat.searchEmpty") : t("chat.empty")}
                 </p>
+
               ) : (
                 messages.map((message, index) => {
                   const mine = message.user_id === user?.id;
@@ -472,6 +577,12 @@ function ChatPage() {
                                 {t("chat.mentionedYou")}
                               </span>
                             )}
+                            {message.pinned_at && (
+                              <span className="flex items-center gap-0.5 font-medium">
+                                <Pin className="h-3 w-3" aria-hidden="true" />
+                                {t("chat.pinned")}
+                              </span>
+                            )}
                             <button
                               type="button"
                               aria-label={t("chat.reply")}
@@ -484,6 +595,24 @@ function ChatPage() {
                             >
                               <Reply className="h-3 w-3" />
                             </button>
+                            <button
+                              type="button"
+                              aria-label={message.pinned_at ? t("chat.unpin") : t("chat.pin")}
+                              className="opacity-0 transition-opacity group-hover:opacity-100"
+                              onClick={() =>
+                                pin.mutate({
+                                  id: Number(message.id),
+                                  pinned: !message.pinned_at,
+                                })
+                              }
+                            >
+                              {message.pinned_at ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                            </button>
+
                             {mine && (
                               <button
                                 type="button"

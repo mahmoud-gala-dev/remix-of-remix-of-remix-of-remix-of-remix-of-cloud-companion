@@ -105,6 +105,41 @@ export async function deleteProjectMessage(id: number) {
   if (error) throw new Error(friendlyDbError(error));
 }
 
+/* ------------------------------------------------------------------ *
+ * Pinning & search
+ * ------------------------------------------------------------------ */
+
+/** Pins or unpins a message for everyone in the channel. */
+export async function setMessagePinned(id: number, pinned: boolean, userId: string) {
+  const { error } = await supabase
+    .from("project_messages")
+    .update({
+      pinned_at: pinned ? new Date().toISOString() : null,
+      pinned_by: pinned ? userId : null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(friendlyDbError(error));
+}
+
+/** Pinned messages of a channel, newest pin first. */
+export function pinnedMessages(messages: ProjectMessage[]): ProjectMessage[] {
+  return messages
+    .filter((message) => Boolean(message.pinned_at))
+    .sort((a, b) => (a.pinned_at! < b.pinned_at! ? 1 : -1));
+}
+
+/** Case-insensitive message search over content and attachment names. */
+export function searchMessages(messages: ProjectMessage[], term: string): ProjectMessage[] {
+  const needle = term.trim().toLowerCase();
+  if (!needle) return messages;
+  return messages.filter(
+    (message) =>
+      message.content.toLowerCase().includes(needle) ||
+      (message.attachment_name ?? "").toLowerCase().includes(needle),
+  );
+}
+
+
 /** HH:MM label for a message bubble. */
 export function messageTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

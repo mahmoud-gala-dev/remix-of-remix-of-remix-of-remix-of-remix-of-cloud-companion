@@ -636,6 +636,8 @@ export type Database = {
           created_at: string
           edited_at: string | null
           id: number
+          pinned_at: string | null
+          pinned_by: string | null
           project_id: number
           reply_to_id: number | null
           updated_at: string
@@ -649,6 +651,8 @@ export type Database = {
           created_at?: string
           edited_at?: string | null
           id?: number
+          pinned_at?: string | null
+          pinned_by?: string | null
           project_id: number
           reply_to_id?: number | null
           updated_at?: string
@@ -662,6 +666,8 @@ export type Database = {
           created_at?: string
           edited_at?: string | null
           id?: number
+          pinned_at?: string | null
+          pinned_by?: string | null
           project_id?: number
           reply_to_id?: number | null
           updated_at?: string

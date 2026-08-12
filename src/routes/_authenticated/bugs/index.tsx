@@ -110,6 +110,8 @@ type ImportReport = {
   filename: string;
   imported: number;
   failures: ImportFailure[];
+  skippedEmpty: number;
+  duplicates: number;
 };
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
@@ -404,6 +406,9 @@ function BugsPage() {
   const [assignee, setAssignee] = useState("All");
   const [page, setPage] = useState(1);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  );
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showStats, setShowStats] = useState(true);
   const [view, setView] = useState<"table" | "board">("table");
@@ -661,8 +666,11 @@ function BugsPage() {
         } = await supabase.auth.getUser();
 
         let imported = 0;
+        let duplicates = 0;
         const failures: ImportFailure[] = [];
-        for (const row of parsedRows) {
+        setImportProgress({ current: 0, total: parsedRows.length });
+        for (const [index, row] of parsedRows.entries()) {
+          setImportProgress({ current: index + 1, total: parsedRows.length });
           if (!row.bug_id.trim()) {
             failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyId") });
             continue;
@@ -673,6 +681,7 @@ function BugsPage() {
           }
           const existingBugId = existingIds.get(row.bug_id);
           if (existingBugId) {
+            duplicates++;
             failures.push({
               excelRowNumber: row.excelRowNumber,
               bugId: row.bug_id,
@@ -714,21 +723,40 @@ function BugsPage() {
           }
         }
 
-        setImportReport({ filename: file.name, imported, failures });
+        setImportReport({
+          filename: file.name,
+          imported,
+          failures,
+          skippedEmpty: validation.skippedEmpty,
+          duplicates,
+        });
+        if (validation.skippedEmpty > 0) {
+          toast.warning(t("bugs.import.skippedEmpty", { count: validation.skippedEmpty }));
+        }
+        if (duplicates > 0) {
+          toast.error(
+            imported === 0
+              ? t("bugs.import.allDuplicates")
+              : t("bugs.import.duplicateToast", { count: duplicates }),
+          );
+        }
         toast.success(t("bugs.import.reportTitle"), {
           description: t("bugs.import.reportDescription", { imported, failed: failures.length }),
         });
         queryClient.invalidateQueries({ queryKey: ["bugs"] });
         queryClient.invalidateQueries({ queryKey: ["bug-modules"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
       } catch (err) {
         toast.error("Import failed", {
           description: err instanceof Error ? err.message : "Failed to parse Excel file.",
         });
       } finally {
         setImporting(false);
+        setImportProgress(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
+
     };
     reader.readAsBinaryString(file);
   };
@@ -834,7 +862,37 @@ function BugsPage() {
               </Link>
             </Button>
           )}
+      </div>
+
+      {/* Live upload indicator for Excel imports. */}
+      {importing && (
+        <div
+          className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-sm font-medium">
+            {importProgress
+              ? t("bugs.import.progress", {
+                  current: importProgress.current,
+                  total: importProgress.total,
+                })
+              : t("bugs.importing")}
+          </p>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{
+                width: importProgress && importProgress.total > 0
+                  ? `${Math.round((importProgress.current / importProgress.total) * 100)}%`
+                  : "10%",
+              }}
+            />
+          </div>
         </div>
+      )}
+
+
       </div>
 
       {/* ── Stats dashboard ────────────────────────────────────────────────── */}
@@ -855,7 +913,18 @@ function BugsPage() {
               })}
             </DialogDescription>
           </DialogHeader>
+          {(importReport?.skippedEmpty || importReport?.duplicates) ? (
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {importReport.skippedEmpty > 0 && (
+                <li>{t("bugs.import.skippedEmpty", { count: importReport.skippedEmpty })}</li>
+              )}
+              {importReport.duplicates > 0 && (
+                <li>{t("bugs.import.duplicateToast", { count: importReport.duplicates })}</li>
+              )}
+            </ul>
+          ) : null}
           {importReport?.failures.length ? (
+
             <div className="space-y-3">
               <h2 className="text-sm font-semibold">{t("bugs.import.failedRows")}</h2>
               <Table>
@@ -1077,10 +1146,12 @@ function BugsPage() {
 
         {selectedIds.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
-            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+            <span className="text-sm font-medium">
+              {t("bugs.bulk.selected", { count: selectedIds.length })}
+            </span>
             <Select value={bulkStatus} onValueChange={setBulkStatus}>
               <SelectTrigger className="h-9 w-40">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("bugs.bulk.status")} />
               </SelectTrigger>
               <SelectContent>
                 {BUG_STATUSES.map((item) => (
@@ -1092,10 +1163,10 @@ function BugsPage() {
             </Select>
             <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
               <SelectTrigger className="h-9 w-48">
-                <SelectValue placeholder="Assignee" />
+                <SelectValue placeholder={t("bugs.bulk.assignee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
+                <SelectItem value="unassigned">{t("bugs.bulk.unassigned")}</SelectItem>
                 {(profiles ?? []).map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     {profile.username}
@@ -1109,11 +1180,12 @@ function BugsPage() {
               onClick={() => bulkUpdateMutation.mutate()}
               disabled={bulkUpdateMutation.isPending}
             >
-              Apply bulk update
+              {t("bugs.bulk.apply")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
-              Clear
+              {t("bugs.bulk.clear")}
             </Button>
+
           </div>
         )}
 

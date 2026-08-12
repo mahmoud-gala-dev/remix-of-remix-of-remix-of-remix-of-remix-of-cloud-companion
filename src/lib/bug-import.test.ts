@@ -18,7 +18,7 @@ describe("bug import helpers", () => {
     expect(normalizeStatus("Done")).toBe("Open");
   });
 
-  it("parses worksheet rows after the two-row heading and skips invalid rows", () => {
+  it("parses rows after the two-row heading, drops blank rows, keeps rows missing an ID", () => {
     const rows = parseBugImportRows([
       ["title"],
       ["headers"],
@@ -37,6 +37,7 @@ describe("bug import helpers", () => {
       ],
       ["", "Auth"],
       ["same", "same"],
+      ["", "", "", ""],
     ]);
 
     expect(rows).toEqual([
@@ -48,8 +49,23 @@ describe("bug import helpers", () => {
         severity: "Major",
         status: "Open",
       }),
+      // Kept on purpose so the import report can reject it with a reason.
+      expect.objectContaining({ bug_id: "", module: "Auth" }),
     ]);
   });
+
+  it("counts fully blank rows as skipped", () => {
+    const result = validateAndParseBugImportRows([
+      ["title"],
+      [...BUG_IMPORT_HEADERS],
+      ["BUG-2", "Auth", "Broken"],
+      ["", "", ""],
+      [],
+    ]);
+    expect(result.rows).toHaveLength(1);
+    expect(result.skippedEmpty).toBe(2);
+  });
+
 
   it("validates the template header row and preserves Excel row numbers", () => {
     const valid = validateAndParseBugImportRows([
