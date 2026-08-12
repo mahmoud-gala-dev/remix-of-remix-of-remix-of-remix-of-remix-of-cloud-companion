@@ -124,7 +124,7 @@
   }
 
   html[dir="rtl"] body {
-    font-family: "IBM Plex Sans Arabic", var(--font-sans);
+    font-family: "Cairo", "IBM Plex Sans Arabic", var(--font-sans);
     letter-spacing: 0;
   }
 
@@ -132,7 +132,7 @@
   html[dir="rtl"] input,
   html[dir="rtl"] textarea,
   html[dir="rtl"] select {
-    font-family: "IBM Plex Sans Arabic", var(--font-sans);
+    font-family: "Cairo", "IBM Plex Sans Arabic", var(--font-sans);
     letter-spacing: 0;
   }
 
