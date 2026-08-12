@@ -21,23 +21,23 @@ import type { Attachment, Comment } from "@/lib/api";
  * 2. Open vs Resolved mini-data panel (numerical breakdown of Open vs Resolved bugs)
  */
 export function BugStatsStrip({ bug }: { bug: Bug }) {
-  // Re-use cached queries that BugComments and BugAttachments already populate
-  const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: ["comments", bug.id],
+  // Counts use dedicated cache keys so they never overwrite full comment/attachment rows.
+  const { data: comments = [] } = useQuery<Pick<Comment, "id">[]>({
+    queryKey: ["comment-count", bug.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("comments").select("id").eq("bug_id", bug.id);
       if (error) throw error;
-      return data as Comment[];
+      return data ?? [];
     },
     staleTime: 60_000,
   });
 
-  const { data: attachments = [] } = useQuery<Attachment[]>({
-    queryKey: ["attachments", bug.id],
+  const { data: attachments = [] } = useQuery<Pick<Attachment, "id">[]>({
+    queryKey: ["attachment-count", bug.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("attachments").select("id").eq("bug_id", bug.id);
       if (error) throw error;
-      return data as Attachment[];
+      return data ?? [];
     },
     staleTime: 60_000,
   });
