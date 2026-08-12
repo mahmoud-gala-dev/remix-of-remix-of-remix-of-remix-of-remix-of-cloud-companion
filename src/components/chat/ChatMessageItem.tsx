@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AtSign, Bug, FolderKanban, Loader2, Paperclip, Pencil, Pin, PinOff, Reply, Trash2 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { chatAttachmentUrl, messageTime, splitChatTokens, type ProjectMessage } from "@/lib/chat";
@@ -128,9 +128,7 @@ export function ChatMessageItem({
   const id = Number(message.id);
   return (
     <div className={cn("flex items-end gap-2", mine && "flex-row-reverse")}>
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarFallback className="text-xs">{author.slice(0, 2).toUpperCase()}</AvatarFallback>
-      </Avatar>
+      <UserAvatar userId={message.user_id} name={author} />
       <div
         className={cn(
           "group max-w-[75%] rounded-2xl px-3 py-2 text-sm",

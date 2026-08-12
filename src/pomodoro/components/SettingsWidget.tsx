@@ -124,15 +124,8 @@ export function SettingsWidget({
           options={THEMES.map((value) => ({ value, label: value }))}
           onChange={(value) => onChange({ theme: value as ThemeName })}
         />
-        <SelectField
-          label={pt(lang, "language")}
-          value={settings.lang}
-          options={[
-            { value: "ar", label: "العربية" },
-            { value: "en", label: "English" },
-          ]}
-          onChange={(value) => onChange({ lang: value as Lang })}
-        />
+        {/* The module is English-only, so there is no language selector. */}
+
       </div>
 
       <div className="mt-4 rounded-xl px-3 py-2" style={{ border: "1px solid var(--pomo-ring)" }}>

@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useUserAvatar } from "@/context/AvatarContext";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Send, Pencil, Trash2, Check, X } from "lucide-react";
 import { nameFor, type ProfileMap } from "@/components/bugs/types";
 import { useBugComments } from "@/hooks/useBugComments";
@@ -63,7 +62,6 @@ export function BugComments({
 }) {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { avatarUrl } = useUserAvatar();
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -112,14 +110,11 @@ export function BugComments({
               (user?.id && user.id === c.user_id) ||
               c.user_id === "developer";
             const authorName = getAuthorName(c.user_id);
-            const initials = authorName.slice(0, 2).toUpperCase() || "DV";
 
             return (
               <div key={c.id} className="flex gap-3">
-                <Avatar className="h-8 w-8 shrink-0 border border-border/50">
-                  {isOwner && avatarUrl ? <AvatarImage src={avatarUrl} alt={authorName} /> : null}
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
+                <UserAvatar userId={c.user_id} name={authorName} />
+
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{authorName}</span>

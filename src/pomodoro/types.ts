@@ -57,7 +57,7 @@ export const INITIAL_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   ambientSound: "none",
   theme: "slate",
-  lang: "ar",
+  lang: "en",
 };
 
 export const STORAGE_KEYS = {

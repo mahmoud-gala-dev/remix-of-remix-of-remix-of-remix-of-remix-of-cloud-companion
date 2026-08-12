@@ -20,6 +20,7 @@ import {
   readStored,
   writeStored,
   type AppSettings,
+  type Lang,
   type LogItem,
   type PhaseType,
   type TimerState,
@@ -64,7 +65,8 @@ export default function PomodoroApp() {
 
   const endTimeRef = useRef<number | null>(readStored<number | null>(STORAGE_KEYS.endTime, null));
   const reachedCheckpoints = useRef<Set<number>>(new Set());
-  const lang = settings.lang;
+  // The Pomodoro module ships in English only.
+  const lang: Lang = "en";
 
   /* Persist every slice separately so a single corrupt key cannot lose the rest. */
   useEffect(() => writeStored(STORAGE_KEYS.settings, settings), [settings]);
@@ -283,8 +285,8 @@ export default function PomodoroApp() {
 
   return (
     <div
-      dir={lang === "ar" ? "rtl" : "ltr"}
-      className={`pomodoro-root theme-${settings.theme} min-h-full rounded-2xl p-4 sm:p-6`}
+      dir="ltr"
+      className={`pomodoro-root theme-${settings.theme} min-h-full rounded-2xl p-3 sm:p-6`}
     >
       <header className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">{pt(lang, "appTitle")}</h1>
@@ -295,7 +297,7 @@ export default function PomodoroApp() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="flex flex-col gap-4">
-          <div className="rounded-2xl p-6 pomo-panel">{timer}</div>
+          <div className="rounded-2xl p-4 sm:p-6 pomo-panel">{timer}</div>
           <PerformanceTracker lang={lang} logs={logs} todos={[...sessionTodos, ...dailyTodos]} />
           <SessionLogs lang={lang} logs={logs} onClear={() => setLogs([])} />
         </div>
@@ -338,7 +340,7 @@ export default function PomodoroApp() {
       </div>
 
       {focusView && (
-        <div className={`pomo-focus-view theme-${settings.theme} pomodoro-root`} dir={lang === "ar" ? "rtl" : "ltr"}>
+        <div className={`pomo-focus-view theme-${settings.theme} pomodoro-root`} dir="ltr">
           <button
             type="button"
             onClick={() => setFocusView(false)}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { toast } from "sonner";
 import {
   Bug as BugIcon,
@@ -151,6 +152,11 @@ function Discussion({
           {comments.map((comment) => (
             <li key={comment.id} className="rounded-md bg-muted/50 px-3 py-2 text-sm">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <UserAvatar
+                  userId={comment.user_id}
+                  name={nameFor(comment.user_id)}
+                  className="h-6 w-6"
+                />
                 <span className="font-medium text-foreground">{nameFor(comment.user_id)}</span>
                 <span>
                   {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
