@@ -46,6 +46,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { EmojiPicker } from "@/components/chat/EmojiPicker";
+import {
+  QUICK_REACTIONS,
+  fetchReactions,
+  groupReactions,
+  toggleReaction,
+} from "@/lib/chat-reactions";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
