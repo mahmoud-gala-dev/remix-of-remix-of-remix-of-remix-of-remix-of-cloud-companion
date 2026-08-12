@@ -577,6 +577,12 @@ function ChatPage() {
                                 {t("chat.mentionedYou")}
                               </span>
                             )}
+                            {message.pinned_at && (
+                              <span className="flex items-center gap-0.5 font-medium">
+                                <Pin className="h-3 w-3" aria-hidden="true" />
+                                {t("chat.pinned")}
+                              </span>
+                            )}
                             <button
                               type="button"
                               aria-label={t("chat.reply")}
@@ -589,6 +595,24 @@ function ChatPage() {
                             >
                               <Reply className="h-3 w-3" />
                             </button>
+                            <button
+                              type="button"
+                              aria-label={message.pinned_at ? t("chat.unpin") : t("chat.pin")}
+                              className="opacity-0 transition-opacity group-hover:opacity-100"
+                              onClick={() =>
+                                pin.mutate({
+                                  id: Number(message.id),
+                                  pinned: !message.pinned_at,
+                                })
+                              }
+                            >
+                              {message.pinned_at ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                            </button>
+
                             {mine && (
                               <button
                                 type="button"
