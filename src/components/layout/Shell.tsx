@@ -98,6 +98,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   const navItems: readonly { to: string; key: TranslationKey; icon: typeof Bug }[] = [
     ...baseNav,
+    ...(user?.role === "developer" || user?.role === "admin"
+      ? ([{ to: "/pomodoro", key: "nav.pomodoro", icon: Timer }] as const)
+      : []),
     ...(user?.role === "admin"
       ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
       : []),

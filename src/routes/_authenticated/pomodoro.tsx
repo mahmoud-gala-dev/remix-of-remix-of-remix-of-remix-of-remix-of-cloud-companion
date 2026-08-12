@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/layout/Shell";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
 /* The module is browser-only (Web Audio, localStorage, speech), so it is loaded
@@ -36,7 +36,7 @@ function PomodoroPage() {
   return (
     <Shell>
       {!canUse ? (
-        <p className="p-6 text-sm text-muted-foreground">{t("common.noAccess")}</p>
+        <p className="p-6 text-sm text-muted-foreground">{t("pomodoro.noAccess")}</p>
       ) : (
         <ClientOnly fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
           <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">…</p>}>
