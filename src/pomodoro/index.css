@@ -1,0 +1,93 @@
+/*
+ * Pomodoro Focus theme surfaces. Values are scoped to `.pomodoro-root` so the
+ * module can carry its own palette without touching the app design tokens.
+ */
+
+.pomodoro-root {
+  --pomo-bg: #0f172a;
+  --pomo-panel: #16213e;
+  --pomo-ink: #e8edf7;
+  --pomo-muted: #93a4c4;
+  --pomo-accent: #38bdf8;
+  --pomo-accent-soft: rgba(56, 189, 248, 0.16);
+  --pomo-ring: rgba(232, 237, 247, 0.12);
+
+  background: var(--pomo-bg);
+  color: var(--pomo-ink);
+}
+
+.pomodoro-root.theme-aurora {
+  --pomo-bg: #14082b;
+  --pomo-panel: #23103f;
+  --pomo-ink: #f4ecff;
+  --pomo-muted: #b79fe0;
+  --pomo-accent: #c084fc;
+  --pomo-accent-soft: rgba(192, 132, 252, 0.18);
+  --pomo-ring: rgba(244, 236, 255, 0.14);
+}
+
+.pomodoro-root.theme-forest {
+  --pomo-bg: #07231b;
+  --pomo-panel: #0d3529;
+  --pomo-ink: #e6f7ef;
+  --pomo-muted: #8fc2ac;
+  --pomo-accent: #34d399;
+  --pomo-accent-soft: rgba(52, 211, 153, 0.18);
+  --pomo-ring: rgba(230, 247, 239, 0.14);
+}
+
+.pomodoro-root.theme-retro {
+  --pomo-bg: #241a12;
+  --pomo-panel: #34251a;
+  --pomo-ink: #fdf1dc;
+  --pomo-muted: #c9a781;
+  --pomo-accent: #f59e0b;
+  --pomo-accent-soft: rgba(245, 158, 11, 0.2);
+  --pomo-ring: rgba(253, 241, 220, 0.16);
+}
+
+.pomodoro-root[dir="rtl"] {
+  font-family: "Cairo", "Tajawal", "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+.pomo-panel {
+  background: var(--pomo-panel);
+  border: 1px solid var(--pomo-ring);
+  color: var(--pomo-ink);
+}
+
+.pomo-muted {
+  color: var(--pomo-muted);
+}
+
+.pomo-accent {
+  color: var(--pomo-accent);
+}
+
+.pomo-accent-bg {
+  background: var(--pomo-accent);
+  color: var(--pomo-bg);
+}
+
+.pomo-accent-soft {
+  background: var(--pomo-accent-soft);
+}
+
+.pomo-field {
+  background: color-mix(in oklab, var(--pomo-bg) 70%, #ffffff 6%);
+  border: 1px solid var(--pomo-ring);
+  color: var(--pomo-ink);
+}
+
+.pomo-field::placeholder {
+  color: var(--pomo-muted);
+}
+
+.pomo-focus-view {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: var(--pomo-bg);
+}
