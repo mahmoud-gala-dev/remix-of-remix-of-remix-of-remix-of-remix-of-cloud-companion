@@ -234,6 +234,28 @@ function ChatPage() {
     return map;
   }, [messages]);
 
+  const messageIds = useMemo(() => messages.map((message) => Number(message.id)), [messages]);
+  const reactionsQuery = useQuery({
+    queryKey: ["chat-reactions", projectId, messageIds.length],
+    queryFn: () => fetchReactions(messageIds),
+    enabled: messageIds.length > 0,
+  });
+  const reactions = reactionsQuery.data ?? [];
+
+  const react = useMutation({
+    mutationFn: ({
+      messageId,
+      emoji,
+      existingId,
+    }: {
+      messageId: number;
+      emoji: string;
+      existingId?: number | null;
+    }) => toggleReaction({ messageId, emoji, existingId: existingId ?? null, userId: user!.id }),
+    onSuccess: () => reactionsQuery.refetch(),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, projectId]);
