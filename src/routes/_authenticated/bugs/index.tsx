@@ -73,7 +73,7 @@ import {
   normalizePriority,
   normalizeSeverity,
   normalizeStatus,
-  parseBugImportRows,
+  validateAndParseBugImportRows,
 } from "@/lib/bug-import";
 import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
@@ -91,6 +91,26 @@ import {
   type SavedFilter,
 } from "@/lib/saved-filters";
 import { writeBugNavFilters } from "@/lib/bug-nav";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+type ImportFailure = {
+  excelRowNumber: number;
+  bugId: string;
+  reason: string;
+  existingBugId?: number;
+};
+
+type ImportReport = {
+  filename: string;
+  imported: number;
+  failures: ImportFailure[];
+};
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
   head: () => ({
@@ -384,6 +404,7 @@ function BugsPage() {
   const [assignee, setAssignee] = useState("All");
   const [page, setPage] = useState(1);
   const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showStats, setShowStats] = useState(true);
   const [view, setView] = useState<"table" | "board">("table");
   const [savedFilterName, setSavedFilterName] = useState("");
@@ -621,48 +642,81 @@ function BugsPage() {
         if (!sheetName) throw new Error("Empty workbook");
         const worksheet = workbook.Sheets[sheetName]!;
         const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
-        const parsedRows = parseBugImportRows(rawData);
+        const validation = validateAndParseBugImportRows(rawData);
+        if (validation.missingHeaders.length > 0) {
+          throw new Error(
+            `${t("bugs.import.headerError")} ${t("bugs.import.missingHeaders", { headers: validation.missingHeaders.join(", ") })}`,
+          );
+        }
+        const parsedRows = validation.rows;
 
-        const { data: existing } = await supabase.from("bugs").select("bug_id").limit(5000);
-        const existingIds = new Set((existing ?? []).map((b) => b.bug_id));
+        const { data: existing, error: existingError } = await supabase
+          .from("bugs")
+          .select("id,bug_id")
+          .limit(5000);
+        if (existingError) throw existingError;
+        const existingIds = new Map((existing ?? []).map((bug) => [bug.bug_id, bug.id]));
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         let imported = 0;
-        let skipped = 0;
+        const failures: ImportFailure[] = [];
         for (const row of parsedRows) {
-          if (existingIds.has(row.bug_id)) {
-            skipped++;
+          if (!row.bug_id.trim()) {
+            failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyId") });
             continue;
           }
-          const { error } = await supabase.from("bugs").insert({
-            bug_id: row.bug_id,
-            module: row.module || "General",
-            title: row.title || row.bug_id,
-            steps: row.steps || null,
-            environment: row.environment || null,
-            expected_result: row.expected_result || null,
-            actual_result: row.actual_result || null,
-            priority: normalizePriority(row.priority),
-            severity: normalizeSeverity(row.severity),
-            status: normalizeStatus(row.status),
-            retest: row.retest || null,
-            role: row.role || null,
-            notes: row.notes || null,
-            project_id: project !== "All" ? Number(project) : null,
-            reported_by: user?.id ?? null,
-          });
+          if (!row.title.trim()) {
+            failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyTitle") });
+            continue;
+          }
+          const existingBugId = existingIds.get(row.bug_id);
+          if (existingBugId) {
+            failures.push({
+              excelRowNumber: row.excelRowNumber,
+              bugId: row.bug_id,
+              reason: t("bugs.import.duplicate"),
+              existingBugId,
+            });
+            continue;
+          }
+          const { data: created, error } = await supabase
+            .from("bugs")
+            .insert({
+              bug_id: row.bug_id,
+              module: row.module || "General",
+              title: row.title,
+              steps: row.steps || null,
+              environment: row.environment || null,
+              expected_result: row.expected_result || null,
+              actual_result: row.actual_result || null,
+              priority: normalizePriority(row.priority),
+              severity: normalizeSeverity(row.severity),
+              status: normalizeStatus(row.status),
+              retest: row.retest || null,
+              role: row.role || null,
+              notes: row.notes || null,
+              project_id: project !== "All" ? Number(project) : null,
+              reported_by: user?.id ?? null,
+            })
+            .select("id")
+            .single();
           if (error) {
-            skipped++;
+            failures.push({
+              excelRowNumber: row.excelRowNumber,
+              bugId: row.bug_id,
+              reason: friendlyDbError(error),
+            });
           } else {
-            existingIds.add(row.bug_id);
+            if (created) existingIds.set(row.bug_id, created.id);
             imported++;
           }
         }
 
-        toast.success("Import complete", {
-          description: `Imported ${imported} bugs. Skipped ${skipped}.`,
+        setImportReport({ filename: file.name, imported, failures });
+        toast.success(t("bugs.import.reportTitle"), {
+          description: t("bugs.import.reportDescription", { imported, failed: failures.length }),
         });
         queryClient.invalidateQueries({ queryKey: ["bugs"] });
         queryClient.invalidateQueries({ queryKey: ["bug-modules"] });
@@ -789,6 +843,55 @@ function BugsPage() {
           <StatsDashboard />
         </div>
       )}
+
+      <Dialog open={Boolean(importReport)} onOpenChange={(open) => !open && setImportReport(null)}>
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("bugs.import.reportTitle")}</DialogTitle>
+            <DialogDescription>
+              {importReport?.filename} · {t("bugs.import.reportDescription", {
+                imported: importReport?.imported ?? 0,
+                failed: importReport?.failures.length ?? 0,
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          {importReport?.failures.length ? (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold">{t("bugs.import.failedRows")}</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("bugs.import.row")}</TableHead>
+                    <TableHead>{t("bugs.import.bugId")}</TableHead>
+                    <TableHead>{t("bugs.import.reason")}</TableHead>
+                    <TableHead className="w-28" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importReport.failures.map((failure) => (
+                    <TableRow key={`${failure.excelRowNumber}-${failure.bugId}`}>
+                      <TableCell>{failure.excelRowNumber}</TableCell>
+                      <TableCell className="font-mono text-xs">{failure.bugId || "—"}</TableCell>
+                      <TableCell className="text-destructive">{failure.reason}</TableCell>
+                      <TableCell>
+                        {failure.existingBugId ? (
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/bugs/$id" params={{ id: String(failure.existingBugId) }}>
+                              {t("bugs.import.open")}
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-sm text-success">{t("bugs.import.noFailures")}</p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Tabs
         value={module}
