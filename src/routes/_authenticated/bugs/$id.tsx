@@ -41,6 +41,7 @@ import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
 import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
 import { BugResolutionTimer } from "@/components/bugs/BugResolutionTimer";
+import { BugNextTen } from "@/components/bugs/BugNextTen";
 
 export const Route = createFileRoute("/_authenticated/bugs/$id")({
   head: () => ({
@@ -325,6 +326,14 @@ function BugDetailPage() {
           <BugHistoryTimeline bugId={bug.id} profileMap={profileMap} />
         </div>
       </div>
+
+      {/* Next 10 bugs in the same filtered order the user was browsing */}
+      <BugNextTen
+        currentId={bug.id}
+        order={bugOrder}
+        label={t("bug.nextTen")}
+        emptyLabel={t("bug.nextTen.empty")}
+      />
     </div>
   );
 }

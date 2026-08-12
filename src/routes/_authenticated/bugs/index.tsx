@@ -1,41 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  BugIcon,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  CircleDashed,
   Download,
   FileUp,
   KanbanSquare,
   List,
   Plus,
-  RefreshCw,
   FileSpreadsheet,
-  Save,
-  Search,
-  ShieldAlert,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -44,29 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchBugsPage,
   fetchBugModules,
   fetchProjects,
   fetchProfiles,
-  fetchDashboardStats,
-  statusTone,
-  priorityTone,
   BUG_STATUSES,
-  BUG_PRIORITIES,
-  BUG_SEVERITIES,
   friendlyDbError,
 } from "@/lib/api";
 import {
@@ -80,9 +44,21 @@ import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
-import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
-import { SlaBadge } from "@/components/bugs/SlaBadge";
+import { BugStatsDashboard } from "@/components/bugs/BugStatsDashboard";
+import {
+  BugFilters,
+  EMPTY_BUG_FILTERS,
+  hasActiveBugFilters,
+  type BugFilterState,
+} from "@/components/bugs/BugFilters";
+import { BugTable } from "@/components/bugs/BugTable";
+import {
+  BugImportDialog,
+  BugImportProgress,
+  type ImportFailure,
+  type ImportReport,
+} from "@/components/bugs/BugImportDialog";
 import { slaSummary } from "@/lib/sla";
 import {
   deleteSavedFilter,
@@ -92,29 +68,30 @@ import {
 } from "@/lib/saved-filters";
 import { writeBugNavFilters } from "@/lib/bug-nav";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-type ImportFailure = {
-  excelRowNumber: number;
-  bugId: string;
-  reason: string;
-  existingBugId?: number;
-};
-
-type ImportReport = {
-  filename: string;
-  imported: number;
-  failures: ImportFailure[];
-  skippedEmpty: number;
-  duplicates: number;
-};
+  filterStateToSearch,
+  parseBugsSearch,
+  searchToFilterState,
+  type BugsSearch,
+} from "@/lib/bug-filter-url";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
+  validateSearch: (search: Record<string, unknown>): BugsSearch => parseBugsSearch(search),
+  // Default values stay out of the URL so shared links only carry real filters.
+  search: {
+    middlewares: [
+      stripSearchParams({
+        q: "",
+        module: "All",
+        status: "All",
+        priority: "All",
+        severity: "All",
+        project: "All",
+        assignee: "All",
+        page: 1,
+        view: "table" as const,
+      }),
+    ],
+  },
   head: () => ({
     meta: [
       { title: "Bugs | ElectroPI Bug Tracker" },
@@ -149,269 +126,24 @@ function useDebounced<T>(value: T, delay = 350) {
 const PAGE_SIZE = 25;
 const BUG_FILTERS_KEY = "electropi.saved.bug_filters";
 
-type BugFilterState = {
-  search: string;
-  module: string;
-  status: string;
-  priority: string;
-  severity: string;
-  project: string;
-  assignee: string;
-};
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* Chart color maps                                                             */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
-const STATUS_COLORS: Record<string, string> = {
-  Open: "var(--chart-4)",
-  "In Progress": "var(--chart-2)",
-  Fixed: "var(--chart-2)",
-  Reopened: "var(--chart-3)",
-  Closed: "var(--chart-5)",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  Critical: "var(--chart-4)",
-  High: "var(--chart-3)",
-  Medium: "var(--chart-1)",
-  Low: "var(--chart-5)",
-};
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* Stats Dashboard Panel                                                        */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
-function StatsDashboard() {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboard-stats", "all"],
-    queryFn: () => fetchDashboardStats("all"),
-    staleTime: 60_000,
-  });
-
-  /* Derived chart data — only recomputed when stats change */
-  const statusChartData = useMemo(
-    () => Object.entries(stats?.by_status ?? {}).map(([name, value]) => ({ name, value })),
-    [stats],
-  );
-
-  const priorityChartData = useMemo(
-    () => Object.entries(stats?.by_priority ?? {}).map(([name, value]) => ({ name, value })),
-    [stats],
-  );
-
-  const openCount = useMemo(
-    () => (stats?.by_status?.["Open"] ?? 0) + (stats?.by_status?.["Reopened"] ?? 0),
-    [stats],
-  );
-
-  const fixedCount = useMemo(
-    () => (stats?.by_status?.["Fixed"] ?? 0) + (stats?.by_status?.["Closed"] ?? 0),
-    [stats],
-  );
-
-  const criticalCount = useMemo(
-    () => (stats?.by_priority?.["Critical"] ?? 0) + (stats?.by_severity?.["Blocker"] ?? 0),
-    [stats],
-  );
-
-  if (isLoading) {
-    return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-2">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
-        ))}
-      </div>
-    );
-  }
-
-  if (!stats || stats.total === 0) return null;
-
-  return (
-    <div className="space-y-4">
-      {/* KPI cards */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <MiniKpi
-          label="Total Bugs"
-          value={stats.total}
-          icon={<BugIcon className="h-4 w-4" />}
-          toneClass="text-primary"
-        />
-        <MiniKpi
-          label="Open / Reopened"
-          value={openCount}
-          icon={<CircleDashed className="h-4 w-4" />}
-          toneClass="text-destructive"
-        />
-        <MiniKpi
-          label="Fixed / Closed"
-          value={fixedCount}
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          toneClass="text-success"
-        />
-        <MiniKpi
-          label="Critical / Blocker"
-          value={criticalCount}
-          icon={<ShieldAlert className="h-4 w-4" />}
-          toneClass={criticalCount > 0 ? "text-destructive" : "text-muted-foreground"}
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Status pie */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-              By Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={statusChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={48}
-                  outerRadius={72}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {statusChartData.map((entry) => (
-                    <Cell key={entry.name} fill={STATUS_COLORS[entry.name] ?? "var(--chart-5)"} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            {/* Legend */}
-            <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1">
-              {statusChartData.map((entry) => (
-                <span
-                  key={entry.name}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <span
-                    className="h-2 w-2 rounded-full shrink-0"
-                    style={{ background: STATUS_COLORS[entry.name] ?? "var(--chart-5)" }}
-                  />
-                  {entry.name}
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    {entry.value}
-                  </Badge>
-                </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Priority bar */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-              By Priority
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart
-                data={priorityChartData}
-                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-              >
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  cursor={{ fill: "oklch(1 0 0 / 4%)" }}
-                />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {priorityChartData.map((entry) => (
-                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] ?? "var(--chart-5)"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function MiniKpi({
-  label,
-  value,
-  icon,
-  toneClass,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  toneClass?: string;
-}) {
-  return (
-    <Card className="border-border/60 shadow-sm">
-      <CardContent className="flex items-start justify-between gap-2 pt-4 pb-3 px-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </p>
-          <p className={`mt-1 text-2xl font-bold ${toneClass ?? "text-foreground"}`}>{value}</p>
-        </div>
-        <div className={`rounded-lg bg-muted/50 p-2 ${toneClass ?? ""}`}>{icon}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* Main page                                                                    */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
 function BugsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const navigate = useNavigate({ from: "/bugs" });
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [module, setModule] = useState("All");
-  const [status, setStatus] = useState("All");
-  const [priority, setPriority] = useState("All");
-  const [severity, setSeverity] = useState("All");
-  const [project, setProject] = useState("All");
-  const [assignee, setAssignee] = useState("All");
-  const [page, setPage] = useState(1);
+  const search = Route.useSearch();
+
+  /* Filters live in the URL, so any list view can be copied and shared as a link. */
+  const filterState = useMemo(() => searchToFilterState(search), [search]);
+  const page = search.page;
+  const view = search.view;
+
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(
     null,
   );
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showStats, setShowStats] = useState(true);
-  const [view, setView] = useState<"table" | "board">("table");
   const [savedFilterName, setSavedFilterName] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter<BugFilterState>[]>(() =>
     readSavedFilters<BugFilterState>(BUG_FILTERS_KEY),
@@ -421,18 +153,56 @@ function BugsPage() {
   const [bulkAssignee, setBulkAssignee] = useState("unassigned");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const debouncedSearch = useDebounced(search);
+  const pushSearch = useCallback(
+    (next: BugFilterState, extra: { page: number; view: "table" | "board" }) => {
+      navigate({
+        search: filterStateToSearch(next, extra) as never,
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const handleFilterChange = useCallback(
+    (patch: Partial<BugFilterState>) => {
+      pushSearch({ ...filterState, ...patch }, { page: 1, view });
+    },
+    [filterState, pushSearch, view],
+  );
+
+  const resetFilters = useCallback(() => {
+    pushSearch(EMPTY_BUG_FILTERS, { page: 1, view });
+  }, [pushSearch, view]);
+
+  const setPage = useCallback(
+    (nextPage: number) => pushSearch(filterState, { page: nextPage, view }),
+    [filterState, pushSearch, view],
+  );
+
+  const setView = useCallback(
+    (nextView: "table" | "board") => pushSearch(filterState, { page, view: nextView }),
+    [filterState, page, pushSearch],
+  );
+
+  const debouncedSearch = useDebounced(filterState.search);
 
   const filters = useMemo(
-    () => ({ status, priority, severity, module, project, assignee, search: debouncedSearch }),
-    [status, priority, severity, module, project, assignee, debouncedSearch],
+    () => ({
+      status: filterState.status,
+      priority: filterState.priority,
+      severity: filterState.severity,
+      module: filterState.module,
+      project: filterState.project,
+      assignee: filterState.assignee,
+      search: debouncedSearch,
+    }),
+    [filterState, debouncedSearch],
   );
 
   /* Keep detail-page next/previous in sync with the filters shown here. */
   useEffect(() => {
     writeBugNavFilters(filters);
   }, [filters]);
-
 
   const {
     data: bugPage,
@@ -480,50 +250,20 @@ function BugsPage() {
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const hasActiveFilters =
-    !!search.trim() ||
-    module !== "All" ||
-    status !== "All" ||
-    priority !== "All" ||
-    severity !== "All" ||
-    project !== "All" ||
-    assignee !== "All";
-
-  const resetPage = useCallback(() => setPage(1), []);
-  const resetFilters = useCallback(() => {
-    setSearch("");
-    setModule("All");
-    setStatus("All");
-    setPriority("All");
-    setSeverity("All");
-    setProject("All");
-    setAssignee("All");
-    setPage(1);
-  }, []);
+  const hasActiveFilters = hasActiveBugFilters(filterState);
 
   const canReport = canReportBugs(user?.role);
   const selectableRows = useMemo(
     () => rows.filter((bug) => canChangeBugStatus(bug, user)),
     [rows, user],
   );
-  const allSelected =
-    selectableRows.length > 0 && selectableRows.every((bug) => selectedIds.includes(bug.id));
 
-  const currentFilterState = useCallback(
-    (): BugFilterState => ({ search, module, status, priority, severity, project, assignee }),
-    [search, module, status, priority, severity, project, assignee],
+  const applySavedFilter = useCallback(
+    (filter: SavedFilter<BugFilterState>) => {
+      pushSearch({ ...EMPTY_BUG_FILTERS, ...filter.value }, { page: 1, view });
+    },
+    [pushSearch, view],
   );
-
-  const applySavedFilter = useCallback((filter: SavedFilter<BugFilterState>) => {
-    setSearch(filter.value.search);
-    setModule(filter.value.module);
-    setStatus(filter.value.status);
-    setPriority(filter.value.priority);
-    setSeverity(filter.value.severity);
-    setProject(filter.value.project);
-    setAssignee(filter.value.assignee);
-    setPage(1);
-  }, []);
 
   const handleSaveFilter = useCallback(() => {
     const name = savedFilterName.trim();
@@ -531,11 +271,11 @@ function BugsPage() {
       toast.error("Name the filter before saving it.");
       return;
     }
-    const next = saveFilter(BUG_FILTERS_KEY, name, currentFilterState());
+    const next = saveFilter(BUG_FILTERS_KEY, name, filterState);
     setSavedFilters([next, ...savedFilters.filter((item) => item.name !== next.name)].slice(0, 12));
     setSavedFilterName("");
     toast.success("Filter saved");
-  }, [currentFilterState, savedFilterName, savedFilters]);
+  }, [filterState, savedFilterName, savedFilters]);
 
   const handleDeleteSavedFilter = useCallback((id: string) => {
     setSavedFilters(deleteSavedFilter<BugFilterState>(BUG_FILTERS_KEY, id));
@@ -662,7 +402,7 @@ function BugsPage() {
         if (existingError) throw existingError;
         const existingIds = new Map((existing ?? []).map((bug) => [bug.bug_id, bug.id]));
         const {
-          data: { user },
+          data: { user: authUser },
         } = await supabase.auth.getUser();
 
         let imported = 0;
@@ -672,11 +412,19 @@ function BugsPage() {
         for (const [index, row] of parsedRows.entries()) {
           setImportProgress({ current: index + 1, total: parsedRows.length });
           if (!row.bug_id.trim()) {
-            failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyId") });
+            failures.push({
+              excelRowNumber: row.excelRowNumber,
+              bugId: row.bug_id,
+              reason: t("bugs.import.emptyId"),
+            });
             continue;
           }
           if (!row.title.trim()) {
-            failures.push({ excelRowNumber: row.excelRowNumber, bugId: row.bug_id, reason: t("bugs.import.emptyTitle") });
+            failures.push({
+              excelRowNumber: row.excelRowNumber,
+              bugId: row.bug_id,
+              reason: t("bugs.import.emptyTitle"),
+            });
             continue;
           }
           const existingBugId = existingIds.get(row.bug_id);
@@ -706,8 +454,8 @@ function BugsPage() {
               retest: row.retest || null,
               role: row.role || null,
               notes: row.notes || null,
-              project_id: project !== "All" ? Number(project) : null,
-              reported_by: user?.id ?? null,
+              project_id: filterState.project !== "All" ? Number(filterState.project) : null,
+              reported_by: authUser?.id ?? null,
             })
             .select("id")
             .single();
@@ -746,7 +494,6 @@ function BugsPage() {
         queryClient.invalidateQueries({ queryKey: ["bugs"] });
         queryClient.invalidateQueries({ queryKey: ["bug-modules"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-
       } catch (err) {
         toast.error("Import failed", {
           description: err instanceof Error ? err.message : "Failed to parse Excel file.",
@@ -756,7 +503,6 @@ function BugsPage() {
         setImportProgress(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
-
     };
     reader.readAsBinaryString(file);
   };
@@ -862,287 +608,36 @@ function BugsPage() {
               </Link>
             </Button>
           )}
+        </div>
       </div>
 
       {/* Live upload indicator for Excel imports. */}
-      {importing && (
-        <div
-          className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3"
-          role="status"
-          aria-live="polite"
-        >
-          <p className="text-sm font-medium">
-            {importProgress
-              ? t("bugs.import.progress", {
-                  current: importProgress.current,
-                  total: importProgress.total,
-                })
-              : t("bugs.importing")}
-          </p>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{
-                width: importProgress && importProgress.total > 0
-                  ? `${Math.round((importProgress.current / importProgress.total) * 100)}%`
-                  : "10%",
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-
-      </div>
+      {importing && <BugImportProgress progress={importProgress} t={t} />}
 
       {/* ── Stats dashboard ────────────────────────────────────────────────── */}
       {showStats && (
         <div className="rounded-xl border border-border/50 bg-card/40 p-4 backdrop-blur-sm">
-          <StatsDashboard />
+          <BugStatsDashboard />
         </div>
       )}
 
-      <Dialog open={Boolean(importReport)} onOpenChange={(open) => !open && setImportReport(null)}>
-        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("bugs.import.reportTitle")}</DialogTitle>
-            <DialogDescription>
-              {importReport?.filename} · {t("bugs.import.reportDescription", {
-                imported: importReport?.imported ?? 0,
-                failed: importReport?.failures.length ?? 0,
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          {(importReport?.skippedEmpty || importReport?.duplicates) ? (
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {importReport.skippedEmpty > 0 && (
-                <li>{t("bugs.import.skippedEmpty", { count: importReport.skippedEmpty })}</li>
-              )}
-              {importReport.duplicates > 0 && (
-                <li>{t("bugs.import.duplicateToast", { count: importReport.duplicates })}</li>
-              )}
-            </ul>
-          ) : null}
-          {importReport?.failures.length ? (
-
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold">{t("bugs.import.failedRows")}</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("bugs.import.row")}</TableHead>
-                    <TableHead>{t("bugs.import.bugId")}</TableHead>
-                    <TableHead>{t("bugs.import.reason")}</TableHead>
-                    <TableHead className="w-28" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {importReport.failures.map((failure) => (
-                    <TableRow key={`${failure.excelRowNumber}-${failure.bugId}`}>
-                      <TableCell>{failure.excelRowNumber}</TableCell>
-                      <TableCell className="font-mono text-xs">{failure.bugId || "—"}</TableCell>
-                      <TableCell className="text-destructive">{failure.reason}</TableCell>
-                      <TableCell>
-                        {failure.existingBugId ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link to="/bugs/$id" params={{ id: String(failure.existingBugId) }}>
-                              {t("bugs.import.open")}
-                            </Link>
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-sm text-success">{t("bugs.import.noFailures")}</p>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Tabs
-        value={module}
-        onValueChange={(v) => {
-          setModule(v);
-          resetPage();
-        }}
-      >
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="All">All</TabsTrigger>
-          {modules.map((m) => (
-            <TabsTrigger key={m} value={m}>
-              {m}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <BugImportDialog report={importReport} onClose={() => setImportReport(null)} t={t} />
 
       <Card className="p-4 space-y-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="ps-8"
-              placeholder="Search by title or bug ID..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                resetPage();
-              }}
-            />
-          </div>
-          <Select
-            value={status}
-            onValueChange={(v) => {
-              setStatus(v);
-              resetPage();
-            }}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All statuses</SelectItem>
-              {BUG_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={priority}
-            onValueChange={(v) => {
-              setPriority(v);
-              resetPage();
-            }}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All priorities</SelectItem>
-              {BUG_PRIORITIES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={severity}
-            onValueChange={(v) => {
-              setSeverity(v);
-              resetPage();
-            }}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Severity" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All severities</SelectItem>
-              {BUG_SEVERITIES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={project}
-            onValueChange={(v) => {
-              setProject(v);
-              resetPage();
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All projects</SelectItem>
-              {(projects ?? []).map((p) => (
-                <SelectItem key={p.id} value={String(p.id)}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={assignee}
-            onValueChange={(v) => {
-              setAssignee(v);
-              resetPage();
-            }}
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="Assignee" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All assignees</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {(profiles ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              <RefreshCw className="me-2 h-4 w-4" />
-              Reset filters
-            </Button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-muted/20 p-3">
-          <Input
-            value={savedFilterName}
-            onChange={(event) => setSavedFilterName(event.target.value)}
-            placeholder="Saved filter name"
-            className="h-9 w-48"
-          />
-          <Button type="button" variant="outline" size="sm" onClick={handleSaveFilter}>
-            <Save className="me-2 h-4 w-4" />
-            Save filter
-          </Button>
-          {savedFilters.length > 0 && (
-            <Select
-              value=""
-              onValueChange={(id) => {
-                const filter = savedFilters.find((item) => item.id === id);
-                if (filter) applySavedFilter(filter);
-              }}
-            >
-              <SelectTrigger className="h-9 w-52">
-                <SelectValue placeholder="Load saved filter" />
-              </SelectTrigger>
-              <SelectContent>
-                {savedFilters.map((filter) => (
-                  <SelectItem key={filter.id} value={filter.id}>
-                    {filter.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {savedFilters.map((filter) => (
-            <Button
-              key={filter.id}
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs text-muted-foreground"
-              onClick={() => handleDeleteSavedFilter(filter.id)}
-              aria-label={`Delete saved filter ${filter.name}`}
-            >
-              <Trash2 className="me-1 h-3.5 w-3.5" />
-              {filter.name}
-            </Button>
-          ))}
-        </div>
+        <BugFilters
+          value={filterState}
+          onChange={handleFilterChange}
+          onReset={resetFilters}
+          modules={modules}
+          projects={projects}
+          profiles={profiles}
+          savedFilters={savedFilters}
+          savedFilterName={savedFilterName}
+          onSavedFilterNameChange={setSavedFilterName}
+          onSaveFilter={handleSaveFilter}
+          onApplySavedFilter={applySavedFilter}
+          onDeleteSavedFilter={handleDeleteSavedFilter}
+        />
 
         {selectedIds.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
@@ -1185,7 +680,6 @@ function BugsPage() {
             <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
               {t("bugs.bulk.clear")}
             </Button>
-
           </div>
         )}
 
@@ -1208,173 +702,22 @@ function BugsPage() {
         )}
 
         {view === "board" ? (
-          <BugKanbanBoard
+          <BugKanbanBoard rows={rows} isLoading={isLoading} user={user} profileMap={profileMap} />
+        ) : (
+          <BugTable
             rows={rows}
             isLoading={isLoading}
             user={user}
             profileMap={profileMap}
+            projectMap={projectMap}
+            selectedIds={selectedIds}
+            onToggleSelected={toggleSelected}
+            onToggleAll={(checked) =>
+              setSelectedIds(checked ? selectableRows.map((bug) => bug.id) : [])
+            }
+            emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
+            t={t}
           />
-        ) : isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="hidden overflow-x-auto md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={allSelected}
-                        onCheckedChange={(checked) =>
-                          setSelectedIds(checked ? selectableRows.map((bug) => bug.id) : [])
-                        }
-                        aria-label={t("bugs.selectAll")}
-                      />
-                    </TableHead>
-                    <TableHead>{t("bugs.col.id")}</TableHead>
-                    <TableHead>{t("bugs.col.title")}</TableHead>
-                    <TableHead>{t("bugs.col.module")}</TableHead>
-                    <TableHead>{t("bugs.col.status")}</TableHead>
-                    <TableHead>{t("bugs.col.priority")}</TableHead>
-                    <TableHead>{t("bugs.col.severity")}</TableHead>
-                    <TableHead>{t("bugs.col.project")}</TableHead>
-                    <TableHead>{t("bugs.col.assignee")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((bug) => (
-                    <TableRow key={bug.id} className="cursor-pointer">
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.includes(bug.id)}
-                          disabled={!canChangeBugStatus(bug, user)}
-                          onCheckedChange={(checked) => toggleSelected(bug.id, checked === true)}
-                          aria-label={t("bugs.selectOne", { id: bug.bug_id })}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/bugs/$id"
-                          params={{ id: String(bug.id) }}
-                          className="hover:underline"
-                        >
-                          {bug.bug_id}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="max-w-[280px]">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to="/bugs/$id"
-                            params={{ id: String(bug.id) }}
-                            className="truncate hover:underline"
-                          >
-                            {bug.title}
-                          </Link>
-                          <SlaBadge bug={bug} />
-                        </div>
-                      </TableCell>
-                      <TableCell>{bug.module}</TableCell>
-                      <TableCell>
-                        <BugQuickStatus
-                          bugId={bug.id}
-                          status={bug.status}
-                          canEdit={canChangeBugStatus(bug, user)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={priorityTone(bug.priority)}>
-                          {bug.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={priorityTone(bug.severity)}>
-                          {bug.severity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {bug.project_id ? (projectMap.get(bug.project_id) ?? "—") : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {bug.assigned_to
-                          ? (profileMap.get(bug.assigned_to) ?? "—")
-                          : t("bugs.unassigned")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {rows.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
-                        {hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile card list — app-like rows instead of a horizontal table */}
-            <ul className="space-y-3 md:hidden">
-              {rows.map((bug) => (
-                <li
-                  key={bug.id}
-                  className="rounded-xl border border-border/60 bg-card p-3 shadow-sm"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <Checkbox
-                      checked={selectedIds.includes(bug.id)}
-                      disabled={!canChangeBugStatus(bug, user)}
-                      onCheckedChange={(checked) => toggleSelected(bug.id, checked === true)}
-                      aria-label={t("bugs.selectOne", { id: bug.bug_id })}
-                    />
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {t("bugs.bulkSelect")}
-                    </span>
-                  </div>
-                  <Link
-                    to="/bugs/$id"
-                    params={{ id: String(bug.id) }}
-                    className="block space-y-1.5 active:opacity-70"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
-                      <Badge variant="outline" className={priorityTone(bug.priority)}>
-                        {bug.priority}
-                      </Badge>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <p className="line-clamp-2 text-sm font-medium">{bug.title}</p>
-                      <SlaBadge bug={bug} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {bug.module} ·{" "}
-                      {bug.assigned_to
-                        ? (profileMap.get(bug.assigned_to) ?? "—")
-                        : t("bugs.unassigned")}
-                    </p>
-                  </Link>
-                  <div className="mt-2.5 flex items-center justify-between gap-2">
-                    <BugQuickStatus
-                      bugId={bug.id}
-                      status={bug.status}
-                      canEdit={canChangeBugStatus(bug, user)}
-                    />
-                    <Badge variant="outline" className={priorityTone(bug.severity)}>
-                      {bug.severity}
-                    </Badge>
-                  </div>
-                </li>
-              ))}
-              {rows.length === 0 && (
-                <li className="py-10 text-center text-sm text-muted-foreground">
-                  {hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
-                </li>
-              )}
-            </ul>
-          </>
         )}
 
         {bugsError && (
@@ -1393,7 +736,7 @@ function BugsPage() {
                 size="sm"
                 aria-label={t("common.previous")}
                 disabled={safePage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, safePage - 1))}
               >
                 {t("common.previous")}
               </Button>
@@ -1402,7 +745,7 @@ function BugsPage() {
                 size="sm"
                 aria-label={t("common.next")}
                 disabled={safePage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(Math.min(totalPages, safePage + 1))}
               >
                 {t("common.next")}
               </Button>

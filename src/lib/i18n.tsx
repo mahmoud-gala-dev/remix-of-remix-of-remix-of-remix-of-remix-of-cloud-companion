@@ -265,6 +265,8 @@ export const dictionaries = {
     "bug.history.field.other": "{field}",
     "bug.delete": "Delete bug",
     "bug.delete.title": "Delete this bug?",
+    "bug.nextTen": "Next 10 bugs",
+    "bug.nextTen.empty": "No further bugs in this filtered list.",
     "bug.delete.body":
       "This will permanently delete the bug and all associated comments, attachments and history.",
     "chat.title": "Team Chat",
@@ -586,6 +588,8 @@ export const dictionaries = {
     "bug.history.field.other": "{field}",
     "bug.delete": "حذف الخطأ",
     "bug.delete.title": "حذف هذا الخطأ؟",
+    "bug.nextTen": "الأخطاء العشرة التالية",
+    "bug.nextTen.empty": "لا توجد أخطاء أخرى في هذه القائمة المفلترة.",
     "bug.delete.body": "سيتم حذف الخطأ وكل التعليقات والمرفقات والسجل نهائيًا.",
     "chat.title": "شات الفريق",
     "chat.subtitle": "شات تفاعلي بين أعضاء كل مشروع — أشر إلى زميل، أو ردّ على رسالة، أو أرفق ملفًا.",
