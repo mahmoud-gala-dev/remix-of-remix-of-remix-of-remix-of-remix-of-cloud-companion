@@ -263,11 +263,14 @@ function ChatPage() {
   const pinned = useMemo(() => pinnedMessages(allMessages), [allMessages]);
   const byId = useMemo(() => {
     const map = new Map<number, ProjectMessage>();
-    messages.forEach((message) => map.set(Number(message.id), message));
+    allMessages.forEach((message) => map.set(Number(message.id), message));
     return map;
-  }, [messages]);
+  }, [allMessages]);
 
-  const messageIds = useMemo(() => messages.map((message) => Number(message.id)), [messages]);
+  const messageIds = useMemo(
+    () => allMessages.map((message) => Number(message.id)),
+    [allMessages],
+  );
   const reactionsQuery = useQuery({
     queryKey: ["chat-reactions", projectId, messageIds.length],
     queryFn: () => fetchReactions(messageIds),
