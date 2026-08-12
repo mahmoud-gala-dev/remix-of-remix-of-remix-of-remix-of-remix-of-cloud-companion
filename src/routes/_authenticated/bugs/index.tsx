@@ -753,8 +753,10 @@ function BugsPage() {
         });
       } finally {
         setImporting(false);
+        setImportProgress(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
+
     };
     reader.readAsBinaryString(file);
   };
