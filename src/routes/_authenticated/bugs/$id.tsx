@@ -37,6 +37,7 @@ import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
+import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
 import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
 import { BugResolutionTimer } from "@/components/bugs/BugResolutionTimer";
