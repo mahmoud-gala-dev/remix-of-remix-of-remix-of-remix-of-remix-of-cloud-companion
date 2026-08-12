@@ -401,6 +401,12 @@ function BugsPage() {
     [status, priority, severity, module, project, assignee, debouncedSearch],
   );
 
+  /* Keep detail-page next/previous in sync with the filters shown here. */
+  useEffect(() => {
+    writeBugNavFilters(filters);
+  }, [filters]);
+
+
   const {
     data: bugPage,
     isLoading,
