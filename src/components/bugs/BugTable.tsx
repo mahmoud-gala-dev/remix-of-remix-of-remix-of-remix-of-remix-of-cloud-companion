@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { priorityTone, type BugListRow } from "@/lib/api";
+import type { TranslationKey } from "@/lib/i18n";
 import { canChangeBugStatus } from "@/lib/permissions";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { SlaBadge } from "@/components/bugs/SlaBadge";
@@ -40,7 +41,7 @@ export function BugTable({
   onToggleSelected: (id: number, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
   emptyMessage: string;
-  t: (key: string, vars?: Record<string, string | number>) => string;
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }) {
   if (isLoading) {
     return (

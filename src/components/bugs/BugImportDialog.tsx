@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { TranslationKey } from "@/lib/i18n";
 
 export type ImportFailure = {
   excelRowNumber: number;
@@ -38,7 +39,7 @@ export function BugImportProgress({
   t,
 }: {
   progress: { current: number; total: number } | null;
-  t: (key: string, vars?: Record<string, string | number>) => string;
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }) {
   const pct =
     progress && progress.total > 0
@@ -70,7 +71,7 @@ export function BugImportDialog({
 }: {
   report: ImportReport | null;
   onClose: () => void;
-  t: (key: string, vars?: Record<string, string | number>) => string;
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }) {
   return (
     <Dialog open={Boolean(report)} onOpenChange={(open) => !open && onClose()}>
