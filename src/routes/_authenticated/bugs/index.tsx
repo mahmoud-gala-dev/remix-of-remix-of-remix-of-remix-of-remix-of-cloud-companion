@@ -560,33 +560,39 @@ function BugsPage() {
     toast.success("CSV exported", { description: `Exported ${rows.length} visible bugs.` });
   }, [rows, projectMap, profileMap]);
 
-  /** Exports the visible rows as .xlsx using the import template column order. */
+  /** Exports the visible rows as .xlsx (same columns as the list view). */
   const exportVisibleExcel = useCallback(async () => {
+    const headers = [
+      "Bug ID",
+      "Title",
+      "Module",
+      "Status",
+      "Priority",
+      "Severity",
+      "Project",
+      "Assignee",
+      "Created At",
+    ];
     const data = rows.map((bug) => [
       bug.bug_id,
-      bug.module,
       bug.title,
-      bug.steps ?? "",
-      bug.environment ?? "",
-      bug.expected_result ?? "",
-      bug.actual_result ?? "",
+      bug.module,
+      bug.status,
       bug.priority,
       bug.severity,
-      bug.reported_by ? (profileMap.get(bug.reported_by) ?? "") : "",
-      bug.status,
-      bug.retest ?? "",
-      bug.role ?? "",
-      bug.notes ?? "",
+      bug.project_id ? (projectMap.get(bug.project_id) ?? "") : "",
+      bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "") : "",
+      bug.created_at,
     ]);
     try {
-      await downloadBugsExcel(data, BUG_TEMPLATE_HEADERS, `${datedCsvFilename("bugs")}.xlsx`);
+      await downloadBugsExcel(data, headers, `${datedCsvFilename("bugs")}.xlsx`);
       toast.success(t("bugs.toast.excel"), {
         description: t("bugs.toast.excelDesc", { count: rows.length }),
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Export failed");
     }
-  }, [rows, profileMap, t]);
+  }, [rows, projectMap, profileMap, t]);
 
   const downloadTemplate = useCallback(async () => {
     try {
