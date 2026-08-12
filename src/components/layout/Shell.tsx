@@ -11,6 +11,7 @@ import {
   GitCompare,
   Inbox,
   LayoutDashboard,
+  Lightbulb,
   PieChart,
 
   LogOut,
