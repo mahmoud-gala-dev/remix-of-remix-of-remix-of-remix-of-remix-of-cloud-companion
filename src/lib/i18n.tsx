@@ -17,6 +17,7 @@ export const dictionaries = {
     "nav.tasks": "Priority Tasks",
     "nav.projects": "Projects",
     "nav.chat": "Team Chat",
+    "nav.improvements": "Script Improvements",
     "nav.activity": "Activity Feed",
     "nav.resolutionTimes": "Resolution Times",
     "nav.analytics": "Analytics",
