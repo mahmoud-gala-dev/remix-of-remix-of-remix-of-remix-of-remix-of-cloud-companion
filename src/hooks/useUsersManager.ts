@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import type { CreateUserData, User, UserRole, UserStats } from "@/types/user-management";
 import {
   createManagedUser,
@@ -34,10 +35,17 @@ export function useUsersManager() {
   const addMocks = useServerFn(createMockUsers);
   const removeMocks = useServerFn(deleteMockUsersFn);
 
+  // Account management is admin-only on the server; don't even call it for
+  // other roles or the thrown authorization error blanks the page.
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   const usersQuery = useQuery({
     queryKey: ["managed-users"],
     queryFn: async () => (await fetchUsers()) as User[],
     retry: false,
+    enabled: isAdmin,
+    throwOnError: false,
   });
 
   const users = (usersQuery.data ?? EMPTY) as User[];
