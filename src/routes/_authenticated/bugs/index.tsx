@@ -157,6 +157,10 @@ function BugsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState("Open");
   const [bulkAssignee, setBulkAssignee] = useState("unassigned");
+  /** Target project for spreadsheet imports started from this page. */
+  const [importProject, setImportProject] = useState("All");
+  const [purgeMode, setPurgeMode] = useState<"all" | "completed" | "project" | null>(null);
+  const [purgeProject, setPurgeProject] = useState("All");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pushSearch = useCallback(
