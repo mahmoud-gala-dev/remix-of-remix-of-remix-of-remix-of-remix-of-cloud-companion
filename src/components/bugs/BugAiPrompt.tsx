@@ -87,7 +87,7 @@ export function BugAiPrompt({ bug }: { bug: Bug }) {
   const [result, setResult] = useState("");
 
   const status = useQuery({ queryKey: ["my-ai-status"], queryFn: () => loadStatus() });
-  const hasKey = !!status.data?.hasGeminiKey;
+  const hasKey = !!status.data?.hasOwnKey;
 
   const saveKeyMutation = useMutation({
     mutationFn: () => saveKey({ data: { apiKey: apiKey.trim() } }),
