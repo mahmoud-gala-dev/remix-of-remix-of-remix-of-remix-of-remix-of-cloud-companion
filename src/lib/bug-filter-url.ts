@@ -37,9 +37,11 @@ export function parseBugsSearch(input: Record<string, unknown>): ResolvedBugsSea
     project: str(input["project"], "All"),
     assignee: str(input["assignee"], "All"),
     page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
-    view: input["view"] === "board" ? "board" : "table",
+    view:
+      input["view"] === "board" ? "board" : input["view"] === "cards" ? "cards" : "table",
   };
 }
+
 
 export function searchToFilterState(search: ResolvedBugsSearch): BugFilterState {
   return {
