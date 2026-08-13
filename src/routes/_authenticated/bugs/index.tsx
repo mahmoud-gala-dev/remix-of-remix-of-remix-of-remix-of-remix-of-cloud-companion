@@ -464,7 +464,12 @@ function BugsPage() {
               retest: row.retest || null,
               role: row.role || null,
               notes: row.notes || null,
-              project_id: filterState.project !== "All" ? Number(filterState.project) : null,
+              project_id:
+                importProject !== "All"
+                  ? Number(importProject)
+                  : filterState.project !== "All"
+                    ? Number(filterState.project)
+                    : null,
               reported_by: authUser?.id ?? null,
             })
             .select("id")
