@@ -153,7 +153,8 @@ function ProjectDetailPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const importMutation = useMutation({
-    mutationFn: (file: File) => importBugsFromExcel({ file, projectId }),
+    mutationFn: (file: File) =>
+      importBugsFromExcel({ file, projectId, uploadedById: user?.id ?? null }),
     onSuccess: (result) => {
       toast.success(
         `Imported ${result.imported} bug(s) · ${result.duplicates} duplicate(s) · ${result.failures.length} failed`,

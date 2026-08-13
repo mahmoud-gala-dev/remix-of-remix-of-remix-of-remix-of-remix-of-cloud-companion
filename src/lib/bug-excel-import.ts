@@ -28,16 +28,53 @@ function readAsBinary(file: File) {
 }
 
 /**
+ * Resolves the single active developer assigned to a project, or `null`
+ * when the project has zero or multiple developers (to avoid ambiguity).
+ *
+ * This is intentionally conservative: auto-assignment only fires when the
+ * relationship is unambiguous (exactly one active developer in the project).
+ */
+async function resolveProjectDeveloper(projectId: number): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("project_developers")
+    .select("user_id")
+    .eq("project_id", projectId);
+
+  if (error || !data || data.length !== 1) return null;
+
+  // Verify the developer's profile is still active before auto-assigning.
+  const developerId = data[0]!.user_id;
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", developerId)
+    .maybeSingle();
+
+  if (profileError || !profile || profile.is_active === false) return null;
+
+  return developerId;
+}
+
+/**
  * Imports bugs from an Excel file built on the export template and attaches
  * every row to `projectId`. Shared by the bug list and the project page.
+ *
+ * @param file        The uploaded .xlsx / .xls file.
+ * @param projectId   The project to attach bugs to (null = no project).
+ * @param uploadedById  The id of the user who triggered the upload, recorded
+ *                    in the new `excel_uploaded_by` column for traceability.
+ * @param onProgress  Optional progress callback (current, total).
  */
 export async function importBugsFromExcel({
   file,
   projectId,
+  uploadedById,
   onProgress,
 }: {
   file: File;
   projectId: number | null;
+  /** Auth user id of whoever clicked "Import Excel". Stored as excel_uploaded_by. */
+  uploadedById?: string | null;
   onProgress?: (current: number, total: number) => void;
 }): Promise<ExcelImportResult> {
   const binary = await readAsBinary(file);
@@ -61,9 +98,9 @@ export async function importBugsFromExcel({
   if (existingError) throw new Error(friendlyDbError(existingError));
   const existingIds = new Set((existing ?? []).map((bug) => bug.bug_id));
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Resolve auto-assignee: only when the project has exactly one active developer.
+  const autoAssignedTo =
+    projectId != null ? await resolveProjectDeveloper(projectId) : null;
 
   const failures: ExcelImportFailure[] = [];
   let imported = 0;
@@ -86,7 +123,6 @@ export async function importBugsFromExcel({
       continue;
     }
     const { error } = await supabase.from("bugs").insert({
-
       bug_id: row.bug_id,
       module: row.module || "General",
       title: row.title,
@@ -101,7 +137,11 @@ export async function importBugsFromExcel({
       role: row.role || null,
       notes: row.notes || null,
       project_id: projectId,
-      reported_by: user?.id ?? null,
+      // The user who triggered the Excel upload — preserved for audit/display.
+      reported_by: uploadedById ?? null,
+      excel_uploaded_by: uploadedById ?? null,
+      // Auto-assign to the sole project developer when the mapping is unambiguous.
+      assigned_to: autoAssignedTo,
     });
     if (error) {
       failures.push({

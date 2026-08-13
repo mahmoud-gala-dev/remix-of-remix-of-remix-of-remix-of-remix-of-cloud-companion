@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BUG_PRIORITIES, BUG_SEVERITIES, BUG_STATUSES, type Profile, type Project } from "@/lib/api";
 import type { SavedFilter } from "@/lib/saved-filters";
+import { useActiveProfiles } from "@/hooks/useActiveProfiles";
 
 export type BugFilterState = {
   search: string;
@@ -77,6 +78,10 @@ export function BugFilters({
   onApplySavedFilter: (filter: SavedFilter<BugFilterState>) => void;
   onDeleteSavedFilter: (id: string) => void;
 }) {
+  // Only active users appear in the assignee filter — inactive accounts cannot
+  // be assigned to new bugs and should not clutter the filter dropdown.
+  const activeProfiles = useActiveProfiles(profiles);
+
   return (
     <div className="space-y-4">
       <Tabs value={value.module} onValueChange={(v) => onChange({ module: v })}>
@@ -159,7 +164,7 @@ export function BugFilters({
           <SelectContent>
             <SelectItem value="All">All assignees</SelectItem>
             <SelectItem value="unassigned">Unassigned</SelectItem>
-            {(profiles ?? []).map((p) => (
+            {activeProfiles.map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.username}
               </SelectItem>

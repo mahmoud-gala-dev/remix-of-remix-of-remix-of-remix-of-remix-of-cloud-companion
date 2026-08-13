@@ -61,6 +61,8 @@ import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
 import { BugCardGrid } from "@/components/bugs/BugCardGrid";
+import { useActiveProfiles } from "@/hooks/useActiveProfiles";
+import { useBulkAssign, BULK_UNASSIGNED } from "@/hooks/useBulkAssign";
 
 import { BugStatsDashboard } from "@/components/bugs/BugStatsDashboard";
 import {
@@ -167,9 +169,8 @@ function BugsPage() {
   const [savedFilters, setSavedFilters] = useState<SavedFilter<BugFilterState>[]>(() =>
     readSavedFilters<BugFilterState>(BUG_FILTERS_KEY),
   );
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  // Bulk-status remains in local state (separate from bulk-assign hook)
   const [bulkStatus, setBulkStatus] = useState("Open");
-  const [bulkAssignee, setBulkAssignee] = useState("unassigned");
   /** Target project for spreadsheet imports started from this page. */
   const [importProject, setImportProject] = useState("All");
   const [purgeMode, setPurgeMode] = useState<"all" | "completed" | "project" | null>(null);
@@ -254,10 +255,19 @@ function BugsPage() {
   const totalCount = bugPage?.count ?? rows.length;
   const aging = useMemo(() => slaSummary(rows), [rows]);
 
+  // ── Bulk assign ──────────────────────────────────────────────────────────
+  const visibleBugIds = useMemo(() => rows.map((bug) => bug.id), [rows]);
+  const bulkAssign = useBulkAssign({ visibleIds: visibleBugIds });
+
+  // Keep selection in sync when the visible row set changes (page turns, filters).
   useEffect(() => {
-    const visibleIds = new Set(rows.map((bug) => bug.id));
-    setSelectedIds((current) => current.filter((id) => visibleIds.has(id)));
-  }, [rows]);
+    bulkAssign.pruneToVisible();
+    // pruneToVisible is stable — only visibleBugIds changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleBugIds]);
+
+  // Active profiles for all assignment dropdowns (excludes deactivated accounts).
+  const activeProfiles = useActiveProfiles(profiles);
 
   const profileMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -295,7 +305,7 @@ function BugsPage() {
     },
     onSuccess: () => {
       setPurgeMode(null);
-      setSelectedIds([]);
+      bulkAssign.clearSelection();
       queryClient.invalidateQueries({ queryKey: ["bugs"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Bugs deleted");
@@ -330,31 +340,34 @@ function BugsPage() {
     setSavedFilters(deleteSavedFilter<BugFilterState>(BUG_FILTERS_KEY, id));
   }, []);
 
-  const toggleSelected = useCallback((id: number, checked: boolean) => {
-    setSelectedIds((current) =>
-      checked ? Array.from(new Set([...current, id])) : current.filter((item) => item !== id),
-    );
-  }, []);
-
-  const bulkUpdateMutation = useMutation({
+  /**
+   * Bulk-status update (separate from bulk-assign): updates the status field of
+   * all selected bugs in one go. Keeps parity with the old bulkUpdateMutation
+   * behaviour while assignment is now delegated to useBulkAssign.
+   */
+  const bulkStatusMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedIds.length) return;
+      if (!bulkAssign.selectedIds.length) return;
       const payload = {
         status: bulkStatus,
-        assigned_to: bulkAssignee === "unassigned" ? null : bulkAssignee,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase.from("bugs").update(payload).in("id", selectedIds);
+      const { error } = await supabase
+        .from("bugs")
+        .update(payload)
+        .in("id", bulkAssign.selectedIds);
       if (error) throw new Error(friendlyDbError(error));
     },
     onSuccess: () => {
-      toast.success("Bulk update applied", {
-        description: `Updated ${selectedIds.length} bug${selectedIds.length === 1 ? "" : "s"}.`,
+      toast.success("Bulk status applied", {
+        description: `Updated ${bulkAssign.selectionCount} bug${
+          bulkAssign.selectionCount === 1 ? "" : "s"
+        }.`,
       });
-      setSelectedIds([]);
-      queryClient.invalidateQueries({ queryKey: ["bugs"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["report-bugs"] });
+      bulkAssign.clearSelection();
+      void queryClient.invalidateQueries({ queryKey: ["bugs"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["report-bugs"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -731,11 +744,13 @@ function BugsPage() {
           onDeleteSavedFilter={handleDeleteSavedFilter}
         />
 
-        {selectedIds.length > 0 && (
+        {bulkAssign.hasSelection && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <span className="text-sm font-medium">
-              {t("bugs.bulk.selected", { count: selectedIds.length })}
+              {t("bugs.bulk.selected", { count: bulkAssign.selectionCount })}
             </span>
+
+            {/* ── Bulk Status ── */}
             <Select value={bulkStatus} onValueChange={setBulkStatus}>
               <SelectTrigger className="h-9 w-40">
                 <SelectValue placeholder={t("bugs.bulk.status")} />
@@ -748,13 +763,27 @@ function BugsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => bulkStatusMutation.mutate()}
+              disabled={bulkStatusMutation.isPending || bulkAssign.isPending}
+            >
+              {t("bugs.bulk.apply")} status
+            </Button>
+
+            {/* ── Bulk Assign ── Only active profiles are offered */}
+            <Select
+              value={bulkAssign.targetAssignee}
+              onValueChange={bulkAssign.setTargetAssignee}
+            >
               <SelectTrigger className="h-9 w-48">
                 <SelectValue placeholder={t("bugs.bulk.assignee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">{t("bugs.bulk.unassigned")}</SelectItem>
-                {(profiles ?? []).map((profile) => (
+                <SelectItem value={BULK_UNASSIGNED}>{t("bugs.bulk.unassigned")}</SelectItem>
+                {activeProfiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     {profile.username}
                   </SelectItem>
@@ -764,12 +793,18 @@ function BugsPage() {
             <Button
               type="button"
               size="sm"
-              onClick={() => bulkUpdateMutation.mutate()}
-              disabled={bulkUpdateMutation.isPending}
+              onClick={() => bulkAssign.apply()}
+              disabled={bulkAssign.isPending || bulkStatusMutation.isPending}
             >
-              {t("bugs.bulk.apply")}
+              {t("bugs.bulk.apply")} assignee
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={bulkAssign.clearSelection}
+            >
               {t("bugs.bulk.clear")}
             </Button>
           </div>
@@ -811,10 +846,10 @@ function BugsPage() {
             user={user}
             profileMap={profileMap}
             projectMap={projectMap}
-            selectedIds={selectedIds}
-            onToggleSelected={toggleSelected}
+            selectedIds={bulkAssign.selectedIds}
+            onToggleSelected={bulkAssign.toggleOne}
             onToggleAll={(checked) =>
-              setSelectedIds(checked ? selectableRows.map((bug) => bug.id) : [])
+              bulkAssign.selectAll(checked ? selectableRows.map((bug) => bug.id) : [])
             }
             emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
             t={t}

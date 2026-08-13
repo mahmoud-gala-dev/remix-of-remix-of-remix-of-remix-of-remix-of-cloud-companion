@@ -310,6 +310,7 @@ export type Database = {
           bug_id: string
           created_at: string
           environment: string | null
+          excel_uploaded_by: string | null
           expected_result: string | null
           github_ref_number: number | null
           github_ref_type: string | null
@@ -336,6 +337,7 @@ export type Database = {
           bug_id: string
           created_at?: string
           environment?: string | null
+          excel_uploaded_by?: string | null
           expected_result?: string | null
           github_ref_number?: number | null
           github_ref_type?: string | null
@@ -362,6 +364,7 @@ export type Database = {
           bug_id?: string
           created_at?: string
           environment?: string | null
+          excel_uploaded_by?: string | null
           expected_result?: string | null
           github_ref_number?: number | null
           github_ref_type?: string | null

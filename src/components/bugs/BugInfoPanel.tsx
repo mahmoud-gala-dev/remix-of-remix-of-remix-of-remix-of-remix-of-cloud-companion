@@ -275,6 +275,13 @@ export function BugInfoPanel({
         <DetailSection title="Context" icon={<ClipboardList className="h-4 w-4" />}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <DetailField label="Reporter" value={nameFor(profileMap, bug.reported_by)} />
+            {/* Show who uploaded the Excel file only when the bug was imported via spreadsheet. */}
+            {bug.excel_uploaded_by && (
+              <DetailField
+                label="Excel Importer"
+                value={nameFor(profileMap, bug.excel_uploaded_by)}
+              />
+            )}
             <DetailField
               label="Module"
               value={

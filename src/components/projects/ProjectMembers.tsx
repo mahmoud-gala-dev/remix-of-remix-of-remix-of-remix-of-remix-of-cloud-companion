@@ -17,6 +17,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useActiveProfiles } from "@/hooks/useActiveProfiles";
 
 export type ProjectMember = {
   id: number;
@@ -48,8 +49,10 @@ export function ProjectMembers({ projectId, profiles, canManage }: ProjectMember
     queryFn: () => fetchProjectMembers(projectId),
   });
 
+  // Only active users can be added as project members.
+  const activeProfiles = useActiveProfiles(profiles);
   const memberIds = new Set(members.map((m) => m.user_id));
-  const available = profiles.filter((p) => !memberIds.has(p.id));
+  const available = activeProfiles.filter((p) => !memberIds.has(p.id));
 
   const addMember = useMutation({
     mutationFn: async (userId: string) => {
