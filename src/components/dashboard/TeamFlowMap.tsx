@@ -27,7 +27,7 @@ const COPY = {
     hint: "hover a node to trace its routes · click to focus",
     related: "Related errors",
     viewAll: "Open in error list",
-    unknownMember: "Deleted / unlinked account",
+    unknownMember: "Deleted User",
     idLabel: "account id",
     critical: "critical",
     roleLabel: "role",
@@ -51,7 +51,7 @@ const COPY = {
     hint: "مرّر على أي عضو لتتبع مساراته · اضغط للتركيز",
     related: "الأخطاء المرتبطة",
     viewAll: "افتح في قائمة الأخطاء",
-    unknownMember: "حساب محذوف أو غير مرتبط بملف تعريف",
+    unknownMember: "مستخدم محذوف",
     idLabel: "معرّف الحساب",
     critical: "حرجة",
     roleLabel: "الدور",
@@ -79,7 +79,7 @@ function radiusFor(node: FlowNode, max: number) {
 }
 
 /** Keeps long member names inside the card instead of clipping past the edge. */
-function shortLabel(value: string, max = 18) {
+function shortLabel(value: string, max = 22) {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value;
 }
 

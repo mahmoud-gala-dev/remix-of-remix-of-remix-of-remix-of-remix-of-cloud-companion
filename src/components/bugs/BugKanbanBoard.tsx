@@ -166,7 +166,7 @@ export function BugKanbanBoard({
                         {bug.priority}
                       </Badge>
                       <span className="truncate text-[11px] text-muted-foreground">
-                        {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : "Unassigned"}
+                        {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "Unassigned") : "Unassigned"}
                       </span>
                     </div>
                   </article>

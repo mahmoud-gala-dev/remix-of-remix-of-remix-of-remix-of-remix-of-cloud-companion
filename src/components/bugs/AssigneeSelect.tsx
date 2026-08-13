@@ -38,9 +38,11 @@ export function AssigneeSelect({
 
   const candidates = useMemo(() => {
     const active = profiles.filter((profile) => profile.is_active !== false);
-    if (value) return active.filter((profile) => profile.id === value);
-    return active.filter((profile) => (roleMap ?? {})[profile.id] === "developer");
-  }, [profiles, roleMap, value]);
+    if (roleMap && Object.keys(roleMap).length > 0) {
+      return active.filter((profile) => roleMap[profile.id] === "developer");
+    }
+    return active;
+  }, [profiles, roleMap]);
 
   const filtered = useMemo(() => {
     const query = term.trim().toLowerCase();
@@ -48,7 +50,7 @@ export function AssigneeSelect({
     return candidates.filter((profile) => profile.username.toLowerCase().includes(query));
   }, [candidates, term]);
 
-  const selected = profiles.find((profile) => profile.id === value);
+  const selected = profiles.find((profile) => profile.id === value && profile.is_active !== false);
 
   return (
     <Popover

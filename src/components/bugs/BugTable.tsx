@@ -128,7 +128,7 @@ export function BugTable({
                 </TableCell>
                 <TableCell>{bug.project_id ? (projectMap.get(bug.project_id) ?? "—") : "—"}</TableCell>
                 <TableCell>
-                  {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : t("bugs.unassigned")}
+                  {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? t("bugs.unassigned")) : t("bugs.unassigned")}
                 </TableCell>
               </TableRow>
             ))}
@@ -175,7 +175,7 @@ export function BugTable({
               </div>
               <p className="text-xs text-muted-foreground">
                 {bug.module} ·{" "}
-                {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? "—") : t("bugs.unassigned")}
+                {bug.assigned_to ? (profileMap.get(bug.assigned_to) ?? t("bugs.unassigned")) : t("bugs.unassigned")}
               </p>
             </Link>
             <div className="mt-2.5 flex items-center justify-between gap-2">

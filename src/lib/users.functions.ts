@@ -178,6 +178,10 @@ export const deleteManagedUser = createServerFn({ method: "POST" })
       throw new Error("Cannot delete the last admin account in the system.");
     }
 
+    // Clean up relations & unassign bugs when a user account is deleted
+    await supabaseAdmin.from("bugs").update({ assigned_to: null }).eq("assigned_to", data.userId);
+    await supabaseAdmin.from("project_developers").delete().eq("user_id", data.userId);
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -241,6 +245,8 @@ export const deleteMockUsers = createServerFn({ method: "POST" })
 
     let deleted = 0;
     for (const profile of profiles ?? []) {
+      await supabaseAdmin.from("bugs").update({ assigned_to: null }).eq("assigned_to", profile.id);
+      await supabaseAdmin.from("project_developers").delete().eq("user_id", profile.id);
       const { error } = await supabaseAdmin.auth.admin.deleteUser(profile.id);
       if (!error) deleted += 1;
     }

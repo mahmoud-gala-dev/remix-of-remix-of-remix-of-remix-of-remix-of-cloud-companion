@@ -52,7 +52,7 @@ export function buildFlowGraph(
       nodes.get(id) ??
       ({
         id,
-        name: names[id] ?? id.slice(0, 8),
+        name: names[id] ?? "Deleted User",
         role: roles[id] ?? null,
         unknown: !names[id],
         side,
@@ -67,8 +67,9 @@ export function buildFlowGraph(
   };
 
   for (const bug of bugs) {
-    const reporter = bug.reported_by ?? null;
-    const assignee = bug.assigned_to ?? null;
+    const reporter = bug.reported_by && names[bug.reported_by] ? bug.reported_by : null;
+    const assignee = bug.assigned_to && names[bug.assigned_to] ? bug.assigned_to : null;
+
     if (reporter) {
       const role = roles[reporter];
       touch(reporter, role === "developer" ? "developer" : "tester", bug);
