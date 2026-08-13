@@ -47,11 +47,13 @@ import {
   friendlyDbError,
 } from "@/lib/api";
 import {
+  generateBugId,
   normalizePriority,
   normalizeSeverity,
   normalizeStatus,
   validateAndParseBugImportRows,
 } from "@/lib/bug-import";
+
 import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
 import { useI18n } from "@/lib/i18n";
