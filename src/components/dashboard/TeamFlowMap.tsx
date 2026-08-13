@@ -342,8 +342,50 @@ export function TeamFlowMap() {
           )}
         </div>
       )}
+    </>
+  );
+
+  const actions = (
+    <div className="flex items-center gap-1">
+      {focus ? (
+        <Button size="sm" variant="ghost" className="h-8" onClick={() => setFocus(null)}>
+          {copy.reset}
+        </Button>
+      ) : null}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-8 gap-1"
+        onClick={() => setExpanded((prev) => !prev)}
+        aria-label={expanded ? copy.collapse : copy.expand}
+      >
+        {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+        <span className="hidden sm:inline">{expanded ? copy.collapse : copy.expand}</span>
+      </Button>
+    </div>
+  );
+
+  if (expanded) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col gap-3 overflow-y-auto bg-background/98 p-4 backdrop-blur">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Radar className="size-4 text-muted-foreground" />
+            <h2 className="truncate text-sm font-semibold">{copy.title}</h2>
+          </div>
+          {actions}
+        </div>
+        <div className="min-w-0 rounded-xl border border-border/60 bg-card p-3">{body}</div>
+      </div>
+    );
+  }
+
+  return (
+    <SectionCard title={copy.title} icon={Radar} action={actions}>
+      {body}
     </SectionCard>
   );
 }
+
 
 export default TeamFlowMap;
