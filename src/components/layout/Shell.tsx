@@ -19,6 +19,7 @@ import {
   Settings,
   MessagesSquare,
   ShieldAlert,
+  BookOpen,
   Timer,
   Users,
 } from "lucide-react";
@@ -102,7 +103,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? ([{ to: "/pomodoro", key: "nav.pomodoro", icon: Timer }] as const)
       : []),
     ...(user?.role === "admin"
-      ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
+      ? ([
+          { to: "/docs", key: "nav.docs", icon: BookOpen },
+          { to: "/users", key: "nav.users", icon: Users },
+        ] as const)
       : []),
     { to: "/settings", key: "nav.settings", icon: Settings },
 

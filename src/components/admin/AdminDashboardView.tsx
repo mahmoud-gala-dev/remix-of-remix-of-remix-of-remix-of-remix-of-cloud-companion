@@ -1,5 +1,7 @@
 import React from "react";
-import { Search, ShieldAlert, SlidersHorizontal, RefreshCw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Search, ShieldAlert, SlidersHorizontal, RefreshCw, BookOpen } from "lucide-react";
+
 import { useUsersManager } from "@/hooks/useUsersManager";
 import { AdminStatsCards } from "./AdminStatsCards";
 import { AddUserModal } from "./AddUserModal";
@@ -57,9 +59,16 @@ export const AdminDashboardView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              to="/docs"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/80 px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50"
+            >
+              <BookOpen className="h-4 w-4" /> Documentation
+            </Link>
             <ImportExportModal users={allUsers} onImportUsers={importUsers} />
             <AddUserModal onAddUser={addUser} />
           </div>
+
         </div>
 
         {/* Aggregate Stats Cards */}

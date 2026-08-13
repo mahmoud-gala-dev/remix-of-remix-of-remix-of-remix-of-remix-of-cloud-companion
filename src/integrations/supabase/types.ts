@@ -898,6 +898,15 @@ export type Database = {
       apply_pending_migrations: { Args: never; Returns: Json }
       bug_dashboard_stats: { Args: { _scope?: string }; Returns: Json }
       bug_exists: { Args: { _bug_id: number }; Returns: boolean }
+      bug_visible: {
+        Args: {
+          _assigned_to: string
+          _project_id: number
+          _reported_by: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       can_access_project_chat: {
         Args: { _project_id: number; _user_id?: string }
         Returns: boolean

@@ -34,6 +34,7 @@ import {
   SectionCard,
 } from "@/components/dashboard/dashboard-parts";
 import { RoleDashboardPanels } from "@/components/dashboard/RoleDashboardPanels";
+import { TeamFlowMap } from "@/components/dashboard/TeamFlowMap";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -492,6 +493,8 @@ function DashboardPage() {
           )}
         </SectionCard>
       </div>
+
+      <TeamFlowMap />
 
       <RoleDashboardPanels role={role} recentBugs={recentBugs} />
     </main>
