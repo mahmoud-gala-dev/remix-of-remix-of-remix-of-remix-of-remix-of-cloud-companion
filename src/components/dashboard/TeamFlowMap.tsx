@@ -283,6 +283,23 @@ export function TeamFlowMap() {
               })}
             </svg>
 
+            {active && positions.get(active) && (
+              <div className="pointer-events-none absolute top-2 end-3 rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
+                <p className="font-semibold">
+                  {positions.get(active)!.node.unknown
+                    ? copy.unknownMember
+                    : positions.get(active)!.node.name}
+                </p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {copy.roleLabel}: {positions.get(active)!.node.role ?? positions.get(active)!.node.side}
+                </p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {positions.get(active)!.node.total} {copy.errors} · {positions.get(active)!.node.open}{" "}
+                  {copy.open} · {positions.get(active)!.node.critical} {copy.critical}
+                </p>
+              </div>
+            )}
+
             <div className="pointer-events-none absolute bottom-2 start-3 font-mono text-[10px] text-muted-foreground">
               {graph.testers.length} {copy.testers} / {graph.developers.length} {copy.developers} ·{" "}
               {graph.links.length} {copy.links} · {graph.unassigned} {copy.unassigned} · {copy.hint}
@@ -293,7 +310,7 @@ export function TeamFlowMap() {
             <div className="rounded-xl border border-border/60 bg-card p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold">
-                  {copy.related} · {names[focus] ?? focus.slice(0, 8)}
+                  {copy.related} · {names[focus] ?? copy.unknownMember}
                 </p>
                 <Button asChild size="sm" variant="ghost" className="h-8">
                   <Link to="/bugs" search={{ assignee: focus }}>
