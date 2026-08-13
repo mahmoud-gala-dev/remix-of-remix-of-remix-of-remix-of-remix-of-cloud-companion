@@ -71,11 +71,11 @@ import {
   filterStateToSearch,
   parseBugsSearch,
   searchToFilterState,
-  type ResolvedBugsSearch,
+  type BugsSearch,
 } from "@/lib/bug-filter-url";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
-  validateSearch: (search: Record<string, unknown>): ResolvedBugsSearch => parseBugsSearch(search),
+  validateSearch: (search: Record<string, unknown>): BugsSearch => parseBugsSearch(search),
   // Default values stay out of the URL so shared links only carry real filters.
   search: {
     middlewares: [
@@ -131,7 +131,7 @@ function BugsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/bugs/" });
   const { user } = useAuth();
-  const search = Route.useSearch();
+  const search = parseBugsSearch(Route.useSearch() as Record<string, unknown>);
 
   /* Filters live in the URL, so any list view can be copied and shared as a link. */
   const filterState = useMemo(() => searchToFilterState(search), [search]);
