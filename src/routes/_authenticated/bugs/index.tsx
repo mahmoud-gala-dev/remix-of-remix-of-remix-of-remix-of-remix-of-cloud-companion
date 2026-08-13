@@ -182,7 +182,7 @@ function BugsPage() {
   );
 
   const setView = useCallback(
-    (nextView: "table" | "board") => pushSearch(filterState, { page, view: nextView }),
+    (nextView: BugsView) => pushSearch(filterState, { page, view: nextView }),
     [filterState, page, pushSearch],
   );
 
