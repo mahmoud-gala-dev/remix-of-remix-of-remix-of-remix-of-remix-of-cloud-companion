@@ -84,23 +84,50 @@ const KIND_ICON: Record<DevNoteKind, typeof Braces> = {
 
 function CodeBlock({ note }: { note: DevNote }) {
   const lines = note.content.replace(/\n$/, "").split("\n");
+  const [copied, setCopied] = useState(false);
   return (
-    <div className="overflow-x-auto rounded-lg border border-border/60 bg-muted/40">
-      <pre className="min-w-full p-0 text-[12.5px] leading-relaxed">
-        <code className="block font-mono">
-          {lines.map((line, index) => (
-            <span key={index} className="flex gap-3 px-3 py-0.5 odd:bg-background/40">
-              <span className="w-6 shrink-0 select-none text-end text-muted-foreground">
-                {index + 1}
+    <div className="relative overflow-hidden rounded-lg border border-border/60 bg-[oklch(0.18_0.03_255)]">
+      <div className="flex items-center justify-between border-b border-border/60 px-3 py-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          {note.language}
+        </span>
+        <button
+          type="button"
+          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => {
+            void navigator.clipboard.writeText(note.content);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1200);
+          }}
+        >
+          {copied ? "copied" : "copy"}
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <pre className="min-w-full p-0 text-[12.5px] leading-relaxed">
+          <code className="block font-mono">
+            {lines.map((line, index) => (
+              <span key={index} className="flex gap-3 px-3 py-0.5 hover:bg-foreground/5">
+                <span className="w-6 shrink-0 select-none text-end text-muted-foreground/60">
+                  {index + 1}
+                </span>
+                <span className="whitespace-pre">
+                  {tokenizeLine(line, note.language).map((token, tIndex) => (
+                    <span key={tIndex} className={TOKEN_CLASS[token.type]}>
+                      {token.value}
+                    </span>
+                  ))}
+                  {line === "" ? " " : null}
+                </span>
               </span>
-              <span className="whitespace-pre">{line || " "}</span>
-            </span>
-          ))}
-        </code>
-      </pre>
+            ))}
+          </code>
+        </pre>
+      </div>
     </div>
   );
 }
+
 
 const MIND_TONES = [
   "bg-primary text-primary-foreground border-primary",
