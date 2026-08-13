@@ -86,11 +86,11 @@ const HEADER_ALIASES: Record<string, string[]> = {
     "issue",
     "issuetitle",
     "problem",
-    "bug",
     "bugtitle",
     "bugname",
     "errortitle",
-    "error",
+    "errorname",
+
     "العنوان",
     "الوصف",
     "المشكلة",
