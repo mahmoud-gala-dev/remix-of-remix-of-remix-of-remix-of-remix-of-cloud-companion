@@ -135,6 +135,25 @@ function DocsPage() {
   const lang: "en" | "ar" = language === "ar" ? "ar" : "en";
   const copy = COPY[lang];
   const [query, setQuery] = useState("");
+  const [helpModule, setHelpModule] = useState<DocModule | null>(null);
+  const [helpMessage, setHelpMessage] = useState("");
+
+  const sendHelp = useMutation({
+    mutationFn: async () => {
+      if (!helpModule) return 0;
+      return requestModuleHelp({
+        module: helpModule[lang].title,
+        message: helpMessage.trim(),
+      });
+    },
+    onSuccess: (count) => {
+      toast[count > 0 ? "success" : "warning"](count > 0 ? copy.sent : copy.noAdmins);
+      setHelpModule(null);
+      setHelpMessage("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
