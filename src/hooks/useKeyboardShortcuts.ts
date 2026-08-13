@@ -18,6 +18,8 @@ export function useKeyboardShortcuts(map: Record<string, ShortcutHandler>, enabl
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // event.key can be undefined with IME input or certain browser extensions.
+      if (!event.key) return;
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
       const handler = map[key];
       if (!handler) return;

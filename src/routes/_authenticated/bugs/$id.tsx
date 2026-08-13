@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Trash2 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   BUG_DETAIL_SHORTCUTS,
@@ -45,6 +45,8 @@ import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
 import { BugResolutionTimer } from "@/components/bugs/BugResolutionTimer";
 import { BugNextTen } from "@/components/bugs/BugNextTen";
+import { WaitingBugsList } from "@/components/bugs/WaitingBugsList";
+import { addWaitingBug, isWaiting, removeWaitingBug } from "@/lib/waiting-bugs";
 
 export const Route = createFileRoute("/_authenticated/bugs/$id")({
   head: () => ({
@@ -75,6 +77,10 @@ function BugDetailPage() {
   const { user } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Tracks localStorage mutations so WaitingBugsList re-reads after add/remove.
+  const [waitingRevision, setWaitingRevision] = useState(0);
+  // Derived synchronously — cheap, no useEffect needed.
+  const [waitingNow, setWaitingNow] = useState(() => isWaiting(bugId));
 
 
   const { data: bug, isLoading } = useQuery({
@@ -157,6 +163,34 @@ function BugDetailPage() {
   );
 
   useKeyboardShortcuts(shortcuts);
+
+  /**
+   * Adds the current bug to the user's personal waiting list (localStorage)
+   * then jumps to the next bug in the filtered order. If there is no next bug
+   * the user is returned to the list page instead.
+   */
+  const handleWait = useCallback(
+    (bug: Bug) => {
+      if (waitingNow) {
+        // Toggle: remove if already waiting.
+        removeWaitingBug(bug.id);
+        setWaitingNow(false);
+        toast.info(t("bug.wait.removed"), { description: bug.bug_id });
+      } else {
+        addWaitingBug({ id: bug.id, bugId: bug.bug_id, title: bug.title });
+        setWaitingNow(true);
+        toast.success(t("bug.wait.added"), { description: bug.bug_id });
+        // Auto-navigate to next bug (or back to list if at the end).
+        if (nextBugId) {
+          navigate({ to: "/bugs/$id", params: { id: String(nextBugId) } });
+        } else {
+          navigate({ to: "/bugs" });
+        }
+      }
+      setWaitingRevision((r) => r + 1);
+    },
+    [waitingNow, nextBugId, navigate, t],
+  );
 
 
   if (isLoading) {
@@ -276,6 +310,20 @@ function BugDetailPage() {
             </Button>
           </div>
 
+          {/* Wait button — developer only: defers the bug and skips to next */}
+          {user?.role === "developer" && (
+            <Button
+              variant={waitingNow ? "secondary" : "outline"}
+              size="sm"
+              title={t("bug.wait.tooltip")}
+              onClick={() => handleWait(bug)}
+              className={waitingNow ? "border-warning/40 bg-warning/10 text-warning" : ""}
+            >
+              <Clock className="me-1.5 h-3.5 w-3.5" />
+              {t("bug.wait")}
+            </Button>
+          )}
+
           {canDelete && (
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogTrigger asChild>
@@ -346,6 +394,11 @@ function BugDetailPage() {
         label={t("bug.nextTen")}
         emptyLabel={t("bug.nextTen.empty")}
       />
+
+      {/* Waiting bugs list — personal deferred bugs stored in localStorage */}
+      {user?.role === "developer" && (
+        <WaitingBugsList refreshSignal={waitingRevision} />
+      )}
     </div>
   );
 }

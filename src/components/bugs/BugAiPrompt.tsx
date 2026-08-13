@@ -21,7 +21,7 @@ const COPY = {
     copyTitle: "Copy title",
     copyDetails: "Copy details",
     downloadTxt: "Download .txt",
-    build: "Build AI prompt",
+    build: "Analyse with Gemini",
     running: "Thinking…",
     keyMissing: "Add your Gemini API key to use AI prompts.",
     keyPlaceholder: "Paste your Gemini API key",
@@ -29,7 +29,7 @@ const COPY = {
     getKey: "Create a key in Google AI Studio",
     keyReady: "Gemini key saved",
     copied: "Copied to clipboard",
-    result: "AI prompt / analysis",
+    result: "AI analysis",
   },
   ar: {
     title: "النسخ والتصدير وبرومبت الذكاء الاصطناعي",
@@ -37,7 +37,7 @@ const COPY = {
     copyTitle: "نسخ العنوان",
     copyDetails: "نسخ التفاصيل",
     downloadTxt: "تحميل ملف نصي",
-    build: "أنشئ برومبت ذكاء اصطناعي",
+    build: "تحليل بالذكاء الاصطناعي",
     running: "جارٍ التحليل…",
     keyMissing: "أضف مفتاح Gemini الخاص بك لاستخدام البرومبت.",
     keyPlaceholder: "الصق مفتاح Gemini",
@@ -45,7 +45,7 @@ const COPY = {
     getKey: "أنشئ مفتاحًا من Google AI Studio",
     keyReady: "تم حفظ مفتاح Gemini",
     copied: "تم النسخ",
-    result: "البرومبت / التحليل",
+    result: "تحليل الذكاء الاصطناعي",
   },
 } as const;
 
@@ -76,7 +76,7 @@ export function bugToPlainText(bug: Bug) {
  * developer's own API key.
  */
 export function BugAiPrompt({ bug }: { bug: Bug }) {
-  const { language } = useI18n();
+  const { language, t } = useI18n();
   const copy = COPY[language === "ar" ? "ar" : "en"];
   const queryClient = useQueryClient();
   const loadStatus = useServerFn(fetchMyAiStatus);
@@ -99,7 +99,44 @@ export function BugAiPrompt({ bug }: { bug: Bug }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const promptText = `You are a senior engineer. Analyse this bug report, list the most likely root causes, and propose a concrete fix plan with code-level suggestions.\n\n${bugToPlainText(bug)}`;
+  /**
+   * Structured chain-of-thought engineering prompt.
+   * Gives the AI:
+   *   1. Role context   — senior software engineer
+   *   2. Full bug report — all non-empty fields
+   *   3. Explicit task list with output format
+   *   4. Guard rails   — asks for actionable, code-level answers
+   */
+  const promptText = `You are a senior software engineer performing a structured root-cause analysis.
+
+## Bug Report
+${bugToPlainText(bug)}
+
+## Your Task (Chain-of-Thought)
+Work through each step carefully before writing the next:
+
+**Step 1 — Understand the symptoms**
+Summarise in 2–3 sentences what the reporter observed and what was expected.
+
+**Step 2 — Identify the most likely root causes (top 3)**
+For each candidate:
+- State the hypothesis
+- Explain why the observed behaviour matches it
+- Assign a confidence level: High / Medium / Low
+
+**Step 3 — Propose a concrete fix plan**
+For the highest-confidence root cause:
+- Describe the code change(s) needed (file / function / logic)
+- Provide a short code snippet if applicable
+- List any edge-cases the fix must handle
+
+**Step 4 — Suggest a regression test**
+Describe one automated test that would catch this bug if it regressed.
+
+**Step 5 — Quick wins / follow-ups**
+Any related improvements or warnings the reviewer should know about.
+
+Respond in clear, technical English. Be concise but specific. Avoid generic advice.`;
 
   const analyse = useMutation({
     mutationFn: () => runPrompt({ data: { prompt: promptText } }),
@@ -161,9 +198,10 @@ export function BugAiPrompt({ bug }: { bug: Bug }) {
               )}
               {analyse.isPending ? copy.running : copy.build}
             </Button>
+            {/* Standalone "Copy prompt" button — paste into any AI tool */}
             <Button variant="ghost" size="sm" onClick={() => void copyText(promptText)}>
               <Copy className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              {copy.result}
+              {t("bug.ai.copyPrompt")}
             </Button>
           </div>
         ) : (

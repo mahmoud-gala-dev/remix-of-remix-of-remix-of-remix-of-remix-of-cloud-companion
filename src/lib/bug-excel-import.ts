@@ -28,31 +28,33 @@ function readAsBinary(file: File) {
 }
 
 /**
- * Resolves the single active developer assigned to a project, or `null`
- * when the project has zero or multiple developers (to avoid ambiguity).
- *
- * This is intentionally conservative: auto-assignment only fires when the
- * relationship is unambiguous (exactly one active developer in the project).
+ * Returns all active developers assigned to a project, ordered by user_id for
+ * deterministic round-robin distribution. Returns an empty array when none.
  */
-async function resolveProjectDeveloper(projectId: number): Promise<string | null> {
+async function resolveProjectDevelopers(projectId: number): Promise<string[]> {
   const { data, error } = await supabase
     .from("project_developers")
     .select("user_id")
     .eq("project_id", projectId);
 
-  if (error || !data || data.length !== 1) return null;
+  if (error || !data || data.length === 0) return [];
 
-  // Verify the developer's profile is still active before auto-assigning.
-  const developerId = data[0]!.user_id;
-  const { data: profile, error: profileError } = await supabase
+  const devIds = data.map((row) => row.user_id);
+
+  // Verify each profile is still active.
+  const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("is_active")
-    .eq("id", developerId)
-    .maybeSingle();
+    .select("id, is_active")
+    .in("id", devIds);
 
-  if (profileError || !profile || profile.is_active === false) return null;
+  if (profilesError || !profiles) return [];
 
-  return developerId;
+  const active = profiles
+    .filter((p) => p.is_active !== false)
+    .map((p) => p.id)
+    .sort(); // stable ordering for deterministic round-robin
+
+  return active;
 }
 
 /**
@@ -98,9 +100,9 @@ export async function importBugsFromExcel({
   if (existingError) throw new Error(friendlyDbError(existingError));
   const existingIds = new Set((existing ?? []).map((bug) => bug.bug_id));
 
-  // Resolve auto-assignee: only when the project has exactly one active developer.
-  const autoAssignedTo =
-    projectId != null ? await resolveProjectDeveloper(projectId) : null;
+  // Resolve all active project developers for round-robin distribution.
+  const projectDevs: string[] =
+    projectId != null ? await resolveProjectDevelopers(projectId) : [];
 
   const failures: ExcelImportFailure[] = [];
   let imported = 0;
@@ -122,6 +124,11 @@ export async function importBugsFromExcel({
       duplicates++;
       continue;
     }
+
+    // Round-robin assignment: cycle through all active project developers.
+    const assignedTo: string | null =
+      projectDevs.length > 0 ? (projectDevs[index % projectDevs.length] ?? null) : null;
+
     const { error } = await supabase.from("bugs").insert({
       bug_id: row.bug_id,
       module: row.module || "General",
@@ -140,8 +147,7 @@ export async function importBugsFromExcel({
       // The user who triggered the Excel upload — preserved for audit/display.
       reported_by: uploadedById ?? null,
       excel_uploaded_by: uploadedById ?? null,
-      // Auto-assign to the sole project developer when the mapping is unambiguous.
-      assigned_to: autoAssignedTo,
+      assigned_to: assignedTo,
     });
     if (error) {
       failures.push({

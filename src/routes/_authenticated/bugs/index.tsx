@@ -14,6 +14,7 @@ import {
   Plus,
   FileSpreadsheet,
   Trash2,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -165,6 +166,7 @@ function BugsPage() {
   );
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showStats, setShowStats] = useState(true);
+  const [showMineOnly, setShowMineOnly] = useState(false);
   const [savedFilterName, setSavedFilterName] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter<BugFilterState>[]>(() =>
     readSavedFilters<BugFilterState>(BUG_FILTERS_KEY),
@@ -217,10 +219,11 @@ function BugsPage() {
       severity: filterState.severity,
       module: filterState.module,
       project: filterState.project,
-      assignee: filterState.assignee,
+      // When "My bugs" toggle is on, override the assignee with the current user.
+      assignee: showMineOnly && user?.id ? user.id : filterState.assignee,
       search: debouncedSearch,
     }),
-    [filterState, debouncedSearch],
+    [filterState, debouncedSearch, showMineOnly, user?.id],
   );
 
   /* Keep detail-page next/previous in sync with the filters shown here. */
@@ -572,141 +575,27 @@ function BugsPage() {
   };
 
   return (
-    <div className="space-y-5 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("bugs.title")}</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {isLoading ? t("common.loading") : t("bugs.summary", { count: totalCount })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View switcher: table vs kanban board */}
-          <div
-            className="inline-flex rounded-md border border-border p-0.5"
-            role="group"
-            aria-label={t("bugs.view")}
-          >
-            <Button
-              variant={view === "table" ? "secondary" : "ghost"}
-              size="sm"
-              aria-pressed={view === "table"}
-              onClick={() => setView("table")}
-              className="h-8"
-            >
-              <List className="me-1.5 h-4 w-4" aria-hidden="true" />
-              {t("bugs.view.list")}
-            </Button>
-            <Button
-              variant={view === "board" ? "secondary" : "ghost"}
-              size="sm"
-              aria-pressed={view === "board"}
-              onClick={() => setView("board")}
-              className="h-8"
-            >
-              <KanbanSquare className="me-1.5 h-4 w-4" aria-hidden="true" />
-              {t("bugs.view.board")}
-            </Button>
-            <Button
-              variant={view === "cards" ? "secondary" : "ghost"}
-              size="sm"
-              aria-pressed={view === "cards"}
-              onClick={() => setView("cards")}
-              className="h-8"
-            >
-              <LayoutGrid className="me-1.5 h-4 w-4" aria-hidden="true" />
-              Cards
-            </Button>
+    <div className="flex flex-col gap-6">
+
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card/80 to-primary/5 px-6 py-5 shadow-sm">
+        {/* Decorative blur blob */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Title + count */}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t("bugs.title")}</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {isLoading ? t("common.loading") : t("bugs.summary", { count: totalCount })}
+            </p>
           </div>
 
-          {/* Stats toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowStats((v) => !v)}
-            className="text-muted-foreground"
-          >
-            {showStats ? (
-              <>
-                <ChevronUp className="me-1.5 h-4 w-4" />
-                {t("bugs.hideStats")}
-              </>
-            ) : (
-              <>
-                <ChevronDown className="me-1.5 h-4 w-4" />
-                {t("bugs.showStats")}
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={exportVisibleRows}
-            disabled={isLoading || rows.length === 0}
-            size="sm"
-          >
-            <Download className="me-2 h-4 w-4" />
-            {t("bugs.exportCsv")}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => void exportVisibleExcel()}
-            disabled={isLoading || rows.length === 0}
-            size="sm"
-          >
-            <FileSpreadsheet className="me-2 h-4 w-4" />
-            {t("bugs.exportExcel")}
-          </Button>
-          <Button variant="outline" onClick={() => void downloadTemplate()} size="sm">
-            <Download className="me-2 h-4 w-4" />
-            {t("bugs.template")}
-          </Button>
-          {/* Pick the destination project before uploading a spreadsheet from this page. */}
-          <Select value={importProject} onValueChange={setImportProject}>
-            <SelectTrigger className="h-9 w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">No project</SelectItem>
-              {(projects ?? []).map((project) => (
-                <SelectItem key={project.id} value={String(project.id)}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <label className="cursor-pointer">
-            <Button variant="outline" asChild disabled={importing} size="sm">
-              <span>
-                <FileUp className="me-2 h-4 w-4" />
-                {importing ? t("bugs.importing") : t("bugs.import")}
-              </span>
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-          </label>
-          {isAdmin && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setPurgeMode("completed")}>
-                <Trash2 className="me-2 h-4 w-4" />
-                Delete completed
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setPurgeMode("project")}>
-                <Trash2 className="me-2 h-4 w-4" />
-                Delete by project
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => setPurgeMode("all")}>
-                <Trash2 className="me-2 h-4 w-4" />
-                Delete all bugs
-              </Button>
-            </>
-          )}
+          {/* Primary action */}
           {canReport && (
-            <Button size="sm" asChild>
+            <Button size="sm" asChild className="shrink-0 shadow-sm">
               <Link to="/bugs/new">
                 <Plus className="me-2 h-4 w-4" />
                 {t("bugs.new")}
@@ -716,36 +605,203 @@ function BugsPage() {
         </div>
       </div>
 
-      {/* Live upload indicator for Excel imports. */}
+      {/* ── Toolbar ──────────────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+
+        {/* Left group: view switcher + quick filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View switcher */}
+          <div
+            className="inline-flex rounded-lg border border-border bg-card p-0.5 shadow-sm"
+            role="group"
+            aria-label={t("bugs.view")}
+          >
+            <Button
+              variant={view === "table" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              className="h-7 px-3 text-xs"
+            >
+              <List className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {t("bugs.view.list")}
+            </Button>
+            <Button
+              variant={view === "board" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "board"}
+              onClick={() => setView("board")}
+              className="h-7 px-3 text-xs"
+            >
+              <KanbanSquare className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {t("bugs.view.board")}
+            </Button>
+            <Button
+              variant={view === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+              className="h-7 px-3 text-xs"
+            >
+              <LayoutGrid className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              Cards
+            </Button>
+          </div>
+
+          {/* Separator */}
+          <div className="h-6 w-px bg-border" aria-hidden="true" />
+
+          {/* My Bugs toggle */}
+          <Button
+            variant={showMineOnly ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowMineOnly((v) => !v)}
+            className={`h-8 text-xs ${
+              showMineOnly ? "border border-primary/30 bg-primary/10 text-primary" : "text-muted-foreground"
+            }`}
+            aria-pressed={showMineOnly}
+          >
+            <User className="me-1.5 h-3.5 w-3.5" />
+            {showMineOnly ? t("bugs.filter.all") : t("bugs.filter.mine")}
+          </Button>
+
+          {/* Stats toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowStats((v) => !v)}
+            className="h-8 text-xs text-muted-foreground"
+          >
+            {showStats ? (
+              <><ChevronUp className="me-1.5 h-3.5 w-3.5" />{t("bugs.hideStats")}</>
+            ) : (
+              <><ChevronDown className="me-1.5 h-3.5 w-3.5" />{t("bugs.showStats")}</>
+            )}
+          </Button>
+        </div>
+
+        {/* Right group: import / export / destructive */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportVisibleRows}
+            disabled={isLoading || rows.length === 0}
+          >
+            <Download className="me-1.5 h-3.5 w-3.5" />
+            {t("bugs.exportCsv")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void exportVisibleExcel()}
+            disabled={isLoading || rows.length === 0}
+          >
+            <FileSpreadsheet className="me-1.5 h-3.5 w-3.5" />
+            {t("bugs.exportExcel")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void downloadTemplate()}>
+            <Download className="me-1.5 h-3.5 w-3.5" />
+            {t("bugs.template")}
+          </Button>
+
+          {/* Separator */}
+          <div className="h-6 w-px bg-border" aria-hidden="true" />
+
+          {/* Project picker + upload */}
+          <div className="flex items-center gap-1.5">
+            <Select value={importProject} onValueChange={setImportProject}>
+              <SelectTrigger className="h-8 w-36 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">No project</SelectItem>
+                {(projects ?? []).map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <label className="cursor-pointer">
+              <Button variant="outline" asChild disabled={importing} size="sm">
+                <span>
+                  <FileUp className="me-1.5 h-3.5 w-3.5" />
+                  {importing ? t("bugs.importing") : t("bugs.import")}
+                </span>
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+          </div>
+
+          {/* Admin-only destructive actions */}
+          {isAdmin && (
+            <>
+              <div className="h-6 w-px bg-border" aria-hidden="true" />
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("completed")}>
+                <Trash2 className="me-1.5 h-3.5 w-3.5" />
+                Delete completed
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("project")}>
+                <Trash2 className="me-1.5 h-3.5 w-3.5" />
+                Delete by project
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setPurgeMode("all")}>
+                <Trash2 className="me-1.5 h-3.5 w-3.5" />
+                Delete all
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Live upload progress */}
       {importing && <BugImportProgress progress={importProgress} t={t} />}
 
-      {/* ── Stats dashboard ────────────────────────────────────────────────── */}
+      {/* ── Stats Dashboard ──────────────────────────────────────────────────── */}
       {showStats && (
-        <div className="rounded-xl border border-border/50 bg-card/40 p-4 backdrop-blur-sm">
-          <BugStatsDashboard />
+        <div className="overflow-hidden rounded-xl border border-border/50 bg-card/50 shadow-sm backdrop-blur-sm">
+          <div className="border-b border-border/40 px-4 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Overview
+            </p>
+          </div>
+          <div className="p-4">
+            <BugStatsDashboard />
+          </div>
         </div>
       )}
 
       <BugImportDialog report={importReport} onClose={() => setImportReport(null)} t={t} />
 
-      <Card className="p-4 space-y-4">
-        <BugFilters
-          value={filterState}
-          onChange={handleFilterChange}
-          onReset={resetFilters}
-          modules={modules}
-          projects={projects}
-          profiles={profiles}
-          savedFilters={savedFilters}
-          savedFilterName={savedFilterName}
-          onSavedFilterNameChange={setSavedFilterName}
-          onSaveFilter={handleSaveFilter}
-          onApplySavedFilter={applySavedFilter}
-          onDeleteSavedFilter={handleDeleteSavedFilter}
-        />
+      {/* ── Filters + Table ──────────────────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+        <div className="p-4 border-b border-border/40">
+          <BugFilters
+            value={filterState}
+            onChange={handleFilterChange}
+            onReset={resetFilters}
+            modules={modules}
+            projects={projects}
+            profiles={profiles}
+            savedFilters={savedFilters}
+            savedFilterName={savedFilterName}
+            onSavedFilterNameChange={setSavedFilterName}
+            onSaveFilter={handleSaveFilter}
+            onApplySavedFilter={applySavedFilter}
+            onDeleteSavedFilter={handleDeleteSavedFilter}
+          />
+        </div>
 
+        {/* Bulk action bar */}
         {bulkAssign.hasSelection && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-primary/20 bg-primary/5 px-4 py-2.5">
             <span className="text-sm font-medium">
               {t("bugs.bulk.selected", { count: bulkAssign.selectionCount })}
             </span>
@@ -810,10 +866,10 @@ function BugsPage() {
           </div>
         )}
 
-        {/* SLA aging summary for the bugs currently in view */}
+        {/* SLA aging banner */}
         {!isLoading && (aging.breached > 0 || aging.atRisk > 0) && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm">
-            <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+          <div className="flex flex-wrap items-center gap-2 border-b border-border/40 bg-amber-500/5 px-4 py-2.5 text-sm">
+            <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" />
             <span className="text-muted-foreground">SLA aging on this page:</span>
             {aging.breached > 0 && (
               <Badge variant="outline" className="border-destructive/40 text-destructive">
@@ -828,40 +884,45 @@ function BugsPage() {
           </div>
         )}
 
-        {view === "board" ? (
-          <BugKanbanBoard rows={rows} isLoading={isLoading} user={user} profileMap={profileMap} />
-        ) : view === "cards" ? (
-          <BugCardGrid
-            rows={rows}
-            isLoading={isLoading}
-            profileMap={profileMap}
-            projectMap={projectMap}
-            emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
-          />
-        ) : (
-
-          <BugTable
-            rows={rows}
-            isLoading={isLoading}
-            user={user}
-            profileMap={profileMap}
-            projectMap={projectMap}
-            selectedIds={bulkAssign.selectedIds}
-            onToggleSelected={bulkAssign.toggleOne}
-            onToggleAll={(checked) =>
-              bulkAssign.selectAll(checked ? selectableRows.map((bug) => bug.id) : [])
-            }
-            emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
-            t={t}
-          />
-        )}
+        <div className="p-0">
+          {view === "board" ? (
+            <BugKanbanBoard rows={rows} isLoading={isLoading} user={user} profileMap={profileMap} />
+          ) : view === "cards" ? (
+            <div className="p-4">
+              <BugCardGrid
+                rows={rows}
+                isLoading={isLoading}
+                profileMap={profileMap}
+                projectMap={projectMap}
+                emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
+              />
+            </div>
+          ) : (
+            <BugTable
+              rows={rows}
+              isLoading={isLoading}
+              user={user}
+              profileMap={profileMap}
+              projectMap={projectMap}
+              selectedIds={bulkAssign.selectedIds}
+              onToggleSelected={bulkAssign.toggleOne}
+              onToggleAll={(checked) =>
+                bulkAssign.selectAll(checked ? selectableRows.map((bug) => bug.id) : [])
+              }
+              emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
+              t={t}
+            />
+          )}
+        </div>
 
         {bugsError && (
-          <p className="text-sm text-destructive">{friendlyDbError(bugsError as never)}</p>
+          <div className="px-4 py-3">
+            <p className="text-sm text-destructive">{friendlyDbError(bugsError as never)}</p>
+          </div>
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between border-t border-border/40 px-4 py-3">
             <p className="text-sm text-muted-foreground">
               {t("bugs.page", { page: safePage, pages: totalPages })}
               {isFetching ? t("bugs.updating") : ""}
@@ -888,7 +949,7 @@ function BugsPage() {
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Admin-only destructive cleanup */}
       <AlertDialog open={purgeMode !== null} onOpenChange={(open) => !open && setPurgeMode(null)}>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Braces, ListChecks, Network, Plus, Trash2 } from "lucide-react";
+import { Braces, CheckCheck, Copy, Download, ListChecks, Network, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,25 +84,77 @@ const KIND_ICON: Record<DevNoteKind, typeof Braces> = {
 };
 
 function CodeBlock({ note }: { note: DevNote }) {
+  const { t } = useI18n();
   const lines = note.content.replace(/\n$/, "").split("\n");
-  const [copied, setCopied] = useState(false);
+  const [copiedRaw, setCopiedRaw] = useState(false);
+  const [copiedBlock, setCopiedBlock] = useState(false);
+
+  const handleCopyRaw = () => {
+    void navigator.clipboard.writeText(note.content);
+    setCopiedRaw(true);
+    window.setTimeout(() => setCopiedRaw(false), 1500);
+  };
+
+  const handleCopyBlock = () => {
+    const markdown = `\`\`\`${note.language}\n${note.content}\n\`\`\``;
+    void navigator.clipboard.writeText(markdown);
+    setCopiedBlock(true);
+    window.setTimeout(() => setCopiedBlock(false), 1500);
+  };
+
+  const handleDownload = () => {
+    const ext = note.language === "ts" || note.language === "tsx" ? note.language
+      : note.language === "python" ? "py"
+      : note.language === "bash" ? "sh"
+      : note.language;
+    const blob = new Blob([note.content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${note.title || "snippet"}.${ext}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="relative overflow-hidden rounded-lg border border-border/60 bg-[oklch(0.18_0.03_255)]">
+      {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-1.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           {note.language}
         </span>
-        <button
-          type="button"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => {
-            void navigator.clipboard.writeText(note.content);
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1200);
-          }}
-        >
-          {copied ? "copied" : "copy"}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Copy raw code */}
+          <button
+            type="button"
+            title="Copy code"
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+            onClick={handleCopyRaw}
+          >
+            {copiedRaw ? <CheckCheck className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+            {copiedRaw ? "copied" : "copy"}
+          </button>
+          {/* Copy as Markdown block */}
+          <button
+            type="button"
+            title={t("bug.devnote.copyBlock")}
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+            onClick={handleCopyBlock}
+          >
+            {copiedBlock ? <CheckCheck className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+            {copiedBlock ? "copied" : "block"}
+          </button>
+          {/* Download as file */}
+          <button
+            type="button"
+            title={t("bug.devnote.download")}
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+            onClick={handleDownload}
+          >
+            <Download className="h-3 w-3" />
+            dl
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <pre className="min-w-full p-0 text-[12.5px] leading-relaxed">

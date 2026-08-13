@@ -32,6 +32,8 @@ export function GlobalSearch() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // event.key can be undefined with IME composition events.
+      if (!event.key) return;
       if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         setOpen((value) => !value);
