@@ -206,15 +206,52 @@ function DocsPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((mod) => (
-                  <DocCard key={mod.id} mod={mod} lang={lang} />
+                  <DocCard key={mod.id} mod={mod} lang={lang} onAskHelp={setHelpModule} />
                 ))}
               </div>
             </section>
           );
         })
       )}
+
+      <Dialog
+        open={helpModule !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHelpModule(null);
+            setHelpMessage("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{copy.helpTitle}</DialogTitle>
+            <DialogDescription>
+              {helpModule ? `${helpModule[lang].title} — ${copy.helpDetail}` : copy.helpDetail}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={helpMessage}
+            onChange={(event) => setHelpMessage(event.target.value)}
+            placeholder={copy.helpPlaceholder}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHelpModule(null)}>
+              {copy.cancel}
+            </Button>
+            <Button
+              onClick={() => sendHelp.mutate()}
+              disabled={sendHelp.isPending || helpMessage.trim().length === 0}
+            >
+              {copy.send}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
+
 
 export default DocsPage;
