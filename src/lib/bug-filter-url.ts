@@ -4,6 +4,8 @@ import { EMPTY_BUG_FILTERS, type BugFilterState } from "@/components/bugs/BugFil
  * Every field is optional so `<Link to="/bugs">` stays valid without repeating
  * the whole filter object; `parseBugsSearch` fills defaults when reading.
  */
+export type BugsView = "table" | "board" | "cards";
+
 export type BugsSearch = {
   q?: string;
   module?: string;
@@ -13,10 +15,11 @@ export type BugsSearch = {
   project?: string;
   assignee?: string;
   page?: number;
-  view?: "table" | "board";
+  view?: BugsView;
 };
 
 export type ResolvedBugsSearch = Required<BugsSearch>;
+
 
 function str(value: unknown, fallback: string) {
   return typeof value === "string" && value.length > 0 ? value : fallback;
