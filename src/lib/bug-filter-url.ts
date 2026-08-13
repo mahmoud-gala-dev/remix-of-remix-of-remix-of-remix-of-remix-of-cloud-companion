@@ -59,7 +59,7 @@ export function searchToFilterState(search: ResolvedBugsSearch): BugFilterState 
 /** Only non-default values end up in the URL, so shared links stay readable. */
 export function filterStateToSearch(
   state: BugFilterState,
-  extra: { page: number; view: "table" | "board" },
+  extra: { page: number; view: BugsView },
 ): Partial<BugsSearch> {
   const next: Partial<BugsSearch> = {};
   if (state.search.trim()) next.q = state.search;
@@ -70,6 +70,7 @@ export function filterStateToSearch(
   if (state.project !== "All") next.project = state.project;
   if (state.assignee !== "All") next.assignee = state.assignee;
   if (extra.page > 1) next.page = extra.page;
-  if (extra.view === "board") next.view = "board";
+  if (extra.view !== "table") next.view = extra.view;
+
   return next;
 }
