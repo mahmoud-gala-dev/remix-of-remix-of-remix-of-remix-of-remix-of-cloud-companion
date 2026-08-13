@@ -1,12 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowRight, BookOpen, Search } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowRight, BookOpen, LifeBuoy, Search } from "lucide-react";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ModuleGlyph } from "@/components/docs/ModuleGlyph";
 import { DOC_GROUPS, DOC_MODULES, type DocModule } from "@/lib/docs-modules";
+import { requestModuleHelp } from "@/lib/module-help";
 import { useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/_authenticated/docs")({
   head: () => ({
