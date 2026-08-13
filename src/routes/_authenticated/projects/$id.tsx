@@ -318,9 +318,40 @@ function ProjectDetailPage() {
       <ProjectMembers projectId={projectId} profiles={profiles ?? []} canManage={!!canManage} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">Bugs ({bugs?.length ?? 0})</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadBugImportTemplate()}
+            >
+              <FileDown className="me-2 h-4 w-4" aria-hidden="true" />
+              Template
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) importMutation.mutate(file);
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={importMutation.isPending}
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload className="me-2 h-4 w-4" aria-hidden="true" />
+              {importMutation.isPending ? "Importing…" : "Import Excel"}
+            </Button>
+          </div>
         </CardHeader>
+
         <CardContent>
           {bugsLoading ? (
             <Skeleton className="h-40 w-full" />
