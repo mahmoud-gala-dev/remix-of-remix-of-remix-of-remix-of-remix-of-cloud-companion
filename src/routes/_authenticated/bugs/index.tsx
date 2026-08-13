@@ -47,6 +47,8 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
+import { BugCardGrid } from "@/components/bugs/BugCardGrid";
+
 import { BugStatsDashboard } from "@/components/bugs/BugStatsDashboard";
 import {
   BugFilters,
