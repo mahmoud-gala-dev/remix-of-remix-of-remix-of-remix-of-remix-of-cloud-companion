@@ -1,11 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyDbError } from "@/lib/api";
 import {
+  generateBugId,
   normalizePriority,
   normalizeSeverity,
   normalizeStatus,
   validateAndParseBugImportRows,
 } from "@/lib/bug-import";
+
 
 export type ExcelImportFailure = { excelRowNumber: number; bugId: string; reason: string };
 
@@ -69,19 +71,22 @@ export async function importBugsFromExcel({
 
   for (const [index, row] of validation.rows.entries()) {
     onProgress?.(index + 1, validation.rows.length);
-    if (!row.bug_id.trim() || !row.title.trim()) {
+    if (!row.title.trim()) {
       failures.push({
         excelRowNumber: row.excelRowNumber,
         bugId: row.bug_id,
-        reason: "Bug ID and Title are required",
+        reason: "Title is required",
       });
       continue;
     }
+    // Sheets without a Bug ID column get one generated automatically.
+    if (!row.bug_id.trim()) row.bug_id = generateBugId(index + 1, existingIds);
     if (existingIds.has(row.bug_id)) {
       duplicates++;
       continue;
     }
     const { error } = await supabase.from("bugs").insert({
+
       bug_id: row.bug_id,
       module: row.module || "General",
       title: row.title,

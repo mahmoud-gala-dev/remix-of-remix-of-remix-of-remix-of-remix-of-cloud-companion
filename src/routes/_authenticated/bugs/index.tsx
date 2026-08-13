@@ -47,11 +47,13 @@ import {
   friendlyDbError,
 } from "@/lib/api";
 import {
+  generateBugId,
   normalizePriority,
   normalizeSeverity,
   normalizeStatus,
   validateAndParseBugImportRows,
 } from "@/lib/bug-import";
+
 import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
 import { useI18n } from "@/lib/i18n";
@@ -458,14 +460,6 @@ function BugsPage() {
         setImportProgress({ current: 0, total: parsedRows.length });
         for (const [index, row] of parsedRows.entries()) {
           setImportProgress({ current: index + 1, total: parsedRows.length });
-          if (!row.bug_id.trim()) {
-            failures.push({
-              excelRowNumber: row.excelRowNumber,
-              bugId: row.bug_id,
-              reason: t("bugs.import.emptyId"),
-            });
-            continue;
-          }
           if (!row.title.trim()) {
             failures.push({
               excelRowNumber: row.excelRowNumber,
@@ -474,6 +468,11 @@ function BugsPage() {
             });
             continue;
           }
+          // Sheets without a Bug ID column get one generated automatically.
+          if (!row.bug_id.trim()) {
+            row.bug_id = generateBugId(index + 1, new Set(existingIds.keys()));
+          }
+
           const existingBugId = existingIds.get(row.bug_id);
           if (existingBugId) {
             duplicates++;

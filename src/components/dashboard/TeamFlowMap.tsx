@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Radar } from "lucide-react";
+import { Maximize2, Minimize2, Radar } from "lucide-react";
 import { SectionCard, EmptyPanel } from "@/components/dashboard/dashboard-parts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,9 @@ const COPY = {
     idLabel: "account id",
     critical: "critical",
     roleLabel: "role",
+    expand: "Fullscreen",
+    collapse: "Exit fullscreen",
+
   },
   ar: {
     title: "خريطة تفاعل الفريق",
@@ -52,13 +55,16 @@ const COPY = {
     idLabel: "معرّف الحساب",
     critical: "حرجة",
     roleLabel: "الدور",
+    expand: "ملء الشاشة",
+    collapse: "إنهاء ملء الشاشة",
+
   },
 } as const;
 
 const WIDTH = 920;
 const HEIGHT = 460;
-const LEFT_X = 170;
-const RIGHT_X = 750;
+const LEFT_X = 215;
+const RIGHT_X = 705;
 
 function laneY(index: number, count: number) {
   if (count <= 1) return HEIGHT / 2;
@@ -72,11 +78,19 @@ function radiusFor(node: FlowNode, max: number) {
   return 10 + scale * 12;
 }
 
+/** Keeps long member names inside the card instead of clipping past the edge. */
+function shortLabel(value: string, max = 18) {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+
 export function TeamFlowMap() {
   const { language } = useI18n();
   const copy = COPY[language === "ar" ? "ar" : "en"];
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
 
   const bugsQuery = useQuery({ queryKey: ["flow-bugs"], queryFn: fetchBugs, staleTime: 30_000 });
   const profilesQuery = useQuery({
@@ -126,35 +140,27 @@ export function TeamFlowMap() {
       .slice(0, 6);
   }, [bugs, focus]);
 
-  return (
-    <SectionCard
-      title={copy.title}
-      icon={Radar}
-      action={
-        focus ? (
-          <Button size="sm" variant="ghost" className="h-8" onClick={() => setFocus(null)}>
-            {copy.reset}
-          </Button>
-        ) : null
-      }
-    >
+  const body = (
+    <>
       {isLoading ? (
         <Skeleton className="h-[420px] w-full" />
       ) : positions.size === 0 ? (
         <EmptyPanel title={copy.empty} detail={copy.emptyDetail} />
       ) : (
-        <div className="space-y-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="w-full min-w-0 space-y-3">
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             {copy.kicker}
           </p>
 
-          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-[oklch(0.19_0.04_255)]">
+          <div className="relative w-full min-w-0 overflow-hidden rounded-xl border border-border/60 bg-[oklch(0.19_0.04_255)]">
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-              className="h-auto w-full"
+              preserveAspectRatio="xMidYMid meet"
+              className={expanded ? "block h-[70vh] w-full" : "block h-auto w-full"}
               role="img"
               aria-label={copy.title}
             >
+
               <defs>
                 <radialGradient id="flow-glow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="var(--chart-2)" stopOpacity="0.35" />
@@ -266,7 +272,8 @@ export function TeamFlowMap() {
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-foreground font-mono text-[12px] font-semibold"
                     >
-                      {node.unknown ? copy.unknownMember : node.name}
+                      {shortLabel(node.unknown ? copy.unknownMember : node.name)}
+
                     </text>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
@@ -284,26 +291,27 @@ export function TeamFlowMap() {
             </svg>
 
             {active && positions.get(active) && (
-              <div className="pointer-events-none absolute top-2 end-3 rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
-                <p className="font-semibold">
+              <div className="pointer-events-none absolute top-2 end-3 max-w-[60%] rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
+                <p className="truncate font-semibold">
                   {positions.get(active)!.node.unknown
                     ? copy.unknownMember
                     : positions.get(active)!.node.name}
                 </p>
-                <p className="font-mono text-[10px] text-muted-foreground">
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
                   {copy.roleLabel}: {positions.get(active)!.node.role ?? positions.get(active)!.node.side}
                 </p>
-                <p className="font-mono text-[10px] text-muted-foreground">
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
                   {positions.get(active)!.node.total} {copy.errors} · {positions.get(active)!.node.open}{" "}
                   {copy.open} · {positions.get(active)!.node.critical} {copy.critical}
                 </p>
               </div>
             )}
 
-            <div className="pointer-events-none absolute bottom-2 start-3 font-mono text-[10px] text-muted-foreground">
+            <div className="pointer-events-none absolute bottom-2 start-3 end-3 truncate font-mono text-[10px] text-muted-foreground">
               {graph.testers.length} {copy.testers} / {graph.developers.length} {copy.developers} ·{" "}
               {graph.links.length} {copy.links} · {graph.unassigned} {copy.unassigned} · {copy.hint}
             </div>
+
           </div>
 
           {focus && (
@@ -338,8 +346,50 @@ export function TeamFlowMap() {
           )}
         </div>
       )}
+    </>
+  );
+
+  const actions = (
+    <div className="flex items-center gap-1">
+      {focus ? (
+        <Button size="sm" variant="ghost" className="h-8" onClick={() => setFocus(null)}>
+          {copy.reset}
+        </Button>
+      ) : null}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-8 gap-1"
+        onClick={() => setExpanded((prev) => !prev)}
+        aria-label={expanded ? copy.collapse : copy.expand}
+      >
+        {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+        <span className="hidden sm:inline">{expanded ? copy.collapse : copy.expand}</span>
+      </Button>
+    </div>
+  );
+
+  if (expanded) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col gap-3 overflow-y-auto bg-background/98 p-4 backdrop-blur">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Radar className="size-4 text-muted-foreground" />
+            <h2 className="truncate text-sm font-semibold">{copy.title}</h2>
+          </div>
+          {actions}
+        </div>
+        <div className="min-w-0 rounded-xl border border-border/60 bg-card p-3">{body}</div>
+      </div>
+    );
+  }
+
+  return (
+    <SectionCard title={copy.title} icon={Radar} action={actions}>
+      {body}
     </SectionCard>
   );
 }
+
 
 export default TeamFlowMap;

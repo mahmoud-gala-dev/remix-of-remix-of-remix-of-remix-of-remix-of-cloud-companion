@@ -75,8 +75,16 @@ describe("bug import helpers", () => {
     ]);
     expect(valid.missingHeaders).toEqual([]);
     expect(valid.rows[0]?.excelRowNumber).toBe(3);
+  });
 
-    const invalid = validateAndParseBugImportRows([["title"], ["Wrong header"]]);
-    expect(invalid.missingHeaders).toContain("Bug ID");
+  it("accepts sheets without a Bug ID column and infers a title column", () => {
+    const result = validateAndParseBugImportRows([
+      ["Module", "Issue description", "Priority"],
+      ["Checkout", "Payment button does nothing", "High"],
+    ]);
+    expect(result.missingHeaders).toEqual([]);
+    expect(result.rows[0]?.title).toBe("Payment button does nothing");
+    expect(result.rows[0]?.bug_id).toBe("");
   });
 });
+
