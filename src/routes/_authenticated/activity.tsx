@@ -39,23 +39,31 @@ const kindMeta: Record<ActivityItem["kind"], { labelKey: TranslationKey; icon: t
   chat: { labelKey: "activity.kind.chat", icon: MessagesSquare },
 };
 
+const PAGE_SIZE = 20;
+
 function ActivityPage() {
   const { t } = useI18n();
+  const [page, setPage] = useState(1);
   const {
-    data: items,
+    data,
     isLoading,
     isFetching,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["activity-feed"],
-    queryFn: () => fetchActivity(60),
+    queryKey: ["activity-feed", page],
+    queryFn: () => fetchActivityPage(page, PAGE_SIZE),
     refetchInterval: 60_000,
+    placeholderData: (previous) => previous,
   });
+
+  const items = data?.items ?? [];
+  const hasMore = data?.hasMore ?? false;
 
   const { data: profiles } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
   const nameFor = (userId: string | null) =>
     (userId ? profiles?.find((p) => p.id === userId)?.username : null) ?? t("common.someone");
+
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
