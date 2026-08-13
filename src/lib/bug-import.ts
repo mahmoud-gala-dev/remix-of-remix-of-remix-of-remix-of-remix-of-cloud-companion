@@ -40,6 +40,8 @@ export type BugImportValidation = {
   unexpectedHeaders: string[];
   /** Fully blank spreadsheet rows that were skipped before validation. */
   skippedEmpty: number;
+  /** Columns that were successfully matched in the uploaded file. */
+  recognizedHeaders?: string[];
 };
 
 /** True when every data cell of the row is blank. */
