@@ -1,5 +1,7 @@
 import React from "react";
-import { Search, ShieldAlert, SlidersHorizontal, RefreshCw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Search, ShieldAlert, SlidersHorizontal, RefreshCw, BookOpen } from "lucide-react";
+
 import { useUsersManager } from "@/hooks/useUsersManager";
 import { AdminStatsCards } from "./AdminStatsCards";
 import { AddUserModal } from "./AddUserModal";
