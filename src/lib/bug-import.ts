@@ -110,7 +110,7 @@ export function locateHeaderRow(rawData: unknown[][]) {
         matches++;
       }
     }
-    if (matches > best.matches) best = { rowIndex, matches, indexes };
+    if (matches >= 3 && matches > best.matches) best = { rowIndex, matches, indexes };
   }
 
   return best;
