@@ -100,26 +100,68 @@ function CodeBlock({ note }: { note: DevNote }) {
   );
 }
 
-function MindBranch({ nodes, depth = 0 }: { nodes: MindNode[]; depth?: number }) {
+const MIND_TONES = [
+  "bg-primary text-primary-foreground border-primary",
+  "bg-primary/15 text-primary border-primary/40",
+  "bg-warning/15 text-warning border-warning/40",
+  "bg-success/15 text-success border-success/40",
+  "bg-muted text-foreground border-border",
+] as const;
+
+function MindBranch({ nodes, depth }: { nodes: MindNode[]; depth: number }) {
+  const tone = MIND_TONES[Math.min(depth, MIND_TONES.length - 1)]!;
   return (
-    <ul className={depth === 0 ? "space-y-1.5" : "ms-4 space-y-1.5 border-s border-border/60 ps-3"}>
+    <ul className="flex flex-col justify-center gap-2">
       {nodes.map((node, index) => (
-        <li key={`${depth}-${index}-${node.label}`} className="space-y-1.5">
+        <li key={`${depth}-${index}-${node.label}`} className="relative flex items-center gap-4">
+          {/* horizontal connector back to the parent node */}
           <span
-            className={
-              depth === 0
-                ? "inline-flex rounded-md bg-primary/10 px-2 py-1 text-sm font-semibold text-primary"
-                : "inline-flex rounded-md bg-muted px-2 py-0.5 text-sm"
-            }
+            aria-hidden="true"
+            className="absolute -start-4 top-1/2 h-px w-4 bg-border"
+          />
+          <span
+            className={`inline-flex shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-sm font-medium shadow-sm ${tone}`}
           >
             {node.label}
           </span>
-          {node.children.length > 0 && <MindBranch nodes={node.children} depth={depth + 1} />}
+          {node.children.length > 0 && (
+            <div className="border-s border-border ps-4">
+              <MindBranch nodes={node.children} depth={depth + 1} />
+            </div>
+          )}
         </li>
       ))}
     </ul>
   );
 }
+
+/** XMind-style horizontal map: a central topic branching out into sub-topics. */
+function MindMap({ note }: { note: DevNote }) {
+  const roots = parseMindMap(note.content);
+  if (roots.length === 0) return null;
+  const [center, ...siblings] = roots;
+  const branches = [...center!.children, ...siblings];
+  return (
+    <div className="overflow-x-auto rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 via-background to-background p-4">
+      <div className="flex items-center gap-4">
+        <span className="inline-flex shrink-0 whitespace-nowrap rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow">
+          {center!.label}
+        </span>
+        {branches.length > 0 && (
+          <div className="border-s-2 border-primary/40 ps-4">
+            <MindBranch nodes={branches} depth={1} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const EXAMPLES: Record<DevNoteKind, string> = {
+  code: `// Root cause: the token was read before hydration\nconst token = typeof window === "undefined" ? null : localStorage.getItem("token");\n\nif (!token) {\n  redirectToLogin();\n}`,
+  checklist: `[x] Reproduce the bug locally\n[x] Find the failing request\n[ ] Write a regression test\n[ ] Fix the query filter\n[ ] Ask the tester to retest`,
+  mindmap: `Login fails on refresh\n  Frontend\n    Session read too early\n    Missing loading state\n  Backend\n    Token expiry 15m\n    Refresh endpoint 401\n  Fix plan\n    Await session before render\n    Retry refresh once`,
+};
 
 function ChecklistBlock({
   note,
