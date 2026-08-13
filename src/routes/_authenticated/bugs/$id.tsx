@@ -315,8 +315,10 @@ function BugDetailPage() {
             canWrite={canEdit || canTrackResolutionTime}
             profileMap={profileMap}
           />
+          {user?.role === "developer" && <BugAiPrompt bug={bug} />}
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
           <BugAttachments bugId={bug.id} />
+
 
         </div>
         <div className="space-y-6">
