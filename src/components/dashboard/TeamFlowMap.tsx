@@ -138,35 +138,27 @@ export function TeamFlowMap() {
       .slice(0, 6);
   }, [bugs, focus]);
 
-  return (
-    <SectionCard
-      title={copy.title}
-      icon={Radar}
-      action={
-        focus ? (
-          <Button size="sm" variant="ghost" className="h-8" onClick={() => setFocus(null)}>
-            {copy.reset}
-          </Button>
-        ) : null
-      }
-    >
+  const body = (
+    <>
       {isLoading ? (
         <Skeleton className="h-[420px] w-full" />
       ) : positions.size === 0 ? (
         <EmptyPanel title={copy.empty} detail={copy.emptyDetail} />
       ) : (
-        <div className="space-y-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="w-full min-w-0 space-y-3">
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             {copy.kicker}
           </p>
 
-          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-[oklch(0.19_0.04_255)]">
+          <div className="relative w-full min-w-0 overflow-hidden rounded-xl border border-border/60 bg-[oklch(0.19_0.04_255)]">
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-              className="h-auto w-full"
+              preserveAspectRatio="xMidYMid meet"
+              className={expanded ? "block h-[70vh] w-full" : "block h-auto w-full"}
               role="img"
               aria-label={copy.title}
             >
+
               <defs>
                 <radialGradient id="flow-glow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="var(--chart-2)" stopOpacity="0.35" />
