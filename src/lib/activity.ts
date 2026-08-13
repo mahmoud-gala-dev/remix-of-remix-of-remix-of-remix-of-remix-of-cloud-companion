@@ -89,6 +89,30 @@ export async function fetchActivity(limit = 60): Promise<ActivityItem[]> {
     .slice(0, limit);
 }
 
+export type ActivityPage = {
+  items: ActivityItem[];
+  page: number;
+  hasMore: boolean;
+};
+
+/**
+ * Paged view over the merged feed. Each source is read up to the end of the
+ * requested page, then the merged timeline is sliced to that page window.
+ */
+export async function fetchActivityPage(page = 1, pageSize = 20): Promise<ActivityPage> {
+  const safePage = Math.max(1, Math.floor(page));
+  const upTo = safePage * pageSize;
+  // One extra row tells us whether a next page exists.
+  const merged = await fetchActivity(upTo + 1);
+  const start = (safePage - 1) * pageSize;
+  return {
+    items: merged.slice(start, start + pageSize),
+    page: safePage,
+    hasMore: merged.length > upTo,
+  };
+}
+
+
 /** Relative time such as "5m ago" for a feed row. */
 export function timeAgo(iso: string, now: Date = new Date()) {
   const diff = Math.max(0, now.getTime() - new Date(iso).getTime());
