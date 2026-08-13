@@ -89,6 +89,8 @@ export function TeamFlowMap() {
   const copy = COPY[language === "ar" ? "ar" : "en"];
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
 
   const bugsQuery = useQuery({ queryKey: ["flow-bugs"], queryFn: fetchBugs, staleTime: 30_000 });
   const profilesQuery = useQuery({
