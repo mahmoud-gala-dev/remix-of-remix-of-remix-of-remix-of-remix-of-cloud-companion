@@ -48,11 +48,12 @@ export function BugKanbanBoard({
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const drop = (status: string) => {
+  const drop = (status: string, transferred: string | null) => {
     setOverStatus(null);
-    const id = draggingId;
+    const parsed = transferred ? Number(transferred) : Number.NaN;
+    const id = Number.isFinite(parsed) ? parsed : draggingId;
     setDraggingId(null);
-    if (id === null) return;
+    if (id === null || id === undefined || Number.isNaN(id)) return;
     const bug = rows.find((row) => row.id === id);
     if (!bug || bug.status === status) return;
     if (!canChangeBugStatus(bug, user)) {
@@ -61,6 +62,7 @@ export function BugKanbanBoard({
     }
     move.mutate({ id, status });
   };
+
 
   if (isLoading) {
     return (
