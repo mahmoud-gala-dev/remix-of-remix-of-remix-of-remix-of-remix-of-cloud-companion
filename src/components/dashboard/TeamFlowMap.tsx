@@ -27,6 +27,10 @@ const COPY = {
     hint: "hover a node to trace its routes · click to focus",
     related: "Related errors",
     viewAll: "Open in error list",
+    unknownMember: "Deleted / unlinked account",
+    idLabel: "account id",
+    critical: "critical",
+    roleLabel: "role",
   },
   ar: {
     title: "خريطة تفاعل الفريق",
@@ -44,6 +48,10 @@ const COPY = {
     hint: "مرّر على أي عضو لتتبع مساراته · اضغط للتركيز",
     related: "الأخطاء المرتبطة",
     viewAll: "افتح في قائمة الأخطاء",
+    unknownMember: "حساب محذوف أو غير مرتبط بملف تعريف",
+    idLabel: "معرّف الحساب",
+    critical: "حرجة",
+    roleLabel: "الدور",
   },
 } as const;
 
@@ -245,13 +253,20 @@ export function TeamFlowMap() {
                     />
                     <circle cx={x} cy={y} r={r} fill={color} fillOpacity={0.22} stroke={color} />
                     <circle cx={x} cy={y} r={4} fill={node.open > 0 ? "var(--chart-1)" : color} />
+                    <title>
+                      {`${node.unknown ? copy.unknownMember : node.name} · ${copy.roleLabel}: ${
+                        node.role ?? (isTester ? copy.testers : copy.developers)
+                      } · ${node.total} ${copy.errors} · ${node.open} ${copy.open} · ${
+                        node.critical
+                      } ${copy.critical}${node.unknown ? ` · ${copy.idLabel}: ${node.id}` : ""}`}
+                    </title>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
                       y={y - 2}
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-foreground font-mono text-[12px] font-semibold"
                     >
-                      {node.name}
+                      {node.unknown ? copy.unknownMember : node.name}
                     </text>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
@@ -259,7 +274,9 @@ export function TeamFlowMap() {
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-muted-foreground font-mono text-[10px]"
                     >
+                      {(node.role ?? (isTester ? "tester" : "developer")) + " · "}
                       {node.total} {copy.errors} · {node.open} {copy.open}
+                      {node.critical > 0 ? ` · ${node.critical} ${copy.critical}` : ""}
                     </text>
                   </g>
                 );
