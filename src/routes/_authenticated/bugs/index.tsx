@@ -845,6 +845,53 @@ function BugsPage() {
           </div>
         )}
       </Card>
+
+      {/* Admin-only destructive cleanup */}
+      <AlertDialog open={purgeMode !== null} onOpenChange={(open) => !open && setPurgeMode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {purgeMode === "completed"
+                ? "Delete all completed bugs?"
+                : purgeMode === "project"
+                  ? "Delete every bug in one project?"
+                  : "Delete every bug?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected bugs and their comments, attachments and
+              history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {purgeMode === "project" && (
+            <Select value={purgeProject} onValueChange={setPurgeProject}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Choose a project" />
+              </SelectTrigger>
+              <SelectContent>
+                {(projects ?? []).map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                purgeMutation.isPending || (purgeMode === "project" && purgeProject === "All")
+              }
+              onClick={(event) => {
+                event.preventDefault();
+                purgeMutation.mutate();
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
