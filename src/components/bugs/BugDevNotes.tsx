@@ -72,6 +72,7 @@ const COPY = {
     hintMindmap: "فكرة في كل سطر، وأزح بمسافتين للتفريع.",
     delete: "حذف",
     by: "بواسطة",
+    example: "أدخل مثالًا",
   },
 } as const;
 
