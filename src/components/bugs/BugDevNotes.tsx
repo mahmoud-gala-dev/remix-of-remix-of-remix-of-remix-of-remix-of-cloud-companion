@@ -51,6 +51,7 @@ const COPY = {
     hintMindmap: "One idea per line; indent with two spaces to nest.",
     delete: "Delete",
     by: "by",
+    example: "Insert example",
   },
   ar: {
     title: "مساحة المطور",
@@ -354,7 +355,17 @@ export function BugDevNotes({
               />
               <p className="text-xs text-muted-foreground">{hint}</p>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="me-auto"
+                onClick={() =>
+                  setDraft((prev) => ({ ...prev, content: EXAMPLES[prev.kind] }))
+                }
+              >
+                {copy.example}
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
                 {copy.cancel}
               </Button>
