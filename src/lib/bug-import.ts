@@ -131,7 +131,7 @@ export function locateHeaderRow(rawData: unknown[][]) {
     const cells = (rawData[rowIndex] ?? []).map(normalizeHeader);
     const indexes: Record<string, number> = {};
     const taken = new Set<number>();
-    let matches = 0;
+    let exactMatches = 0;
     // Exact/alias pass first, then a fuzzy "contains" pass for leftovers.
     for (const pass of ["exact", "fuzzy"] as const) {
       for (const header of expected) {
@@ -146,15 +146,18 @@ export function locateHeaderRow(rawData: unknown[][]) {
         if (index >= 0) {
           indexes[header] = index;
           taken.add(index);
-          matches++;
+          if (pass === "exact") exactMatches++;
         }
       }
     }
-    if (matches >= 1 && matches > best.matches) best = { rowIndex, matches, indexes };
+    // Two exact column names are enough to trust the row as a header row.
+    if (exactMatches >= 2 && exactMatches > best.matches)
+      best = { rowIndex, matches: exactMatches, indexes };
   }
 
   return best;
 }
+
 
 /**
  * When no Title column can be matched by name, pick the column that looks most
