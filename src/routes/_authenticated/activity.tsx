@@ -107,7 +107,7 @@ function ActivityPage() {
             </p>
           )}
 
-          {(items ?? []).map((item) => {
+          {items.map((item: ActivityItem) => {
             const meta = kindMeta[item.kind];
             const Icon = meta.icon;
             return (
@@ -150,7 +150,34 @@ function ActivityPage() {
               </article>
             );
           })}
+
+          {(page > 1 || hasMore) && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {t("bugs.page", { page, pages: hasMore ? page + 1 : page })}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || isFetching}
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                >
+                  {t("common.previous")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hasMore || isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  {t("common.next")}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
+
       </Card>
     </div>
   );
