@@ -31,6 +31,9 @@ const COPY = {
     idLabel: "account id",
     critical: "critical",
     roleLabel: "role",
+    expand: "Fullscreen",
+    collapse: "Exit fullscreen",
+
   },
   ar: {
     title: "خريطة تفاعل الفريق",
