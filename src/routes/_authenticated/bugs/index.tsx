@@ -545,7 +545,18 @@ function BugsPage() {
               <KanbanSquare className="me-1.5 h-4 w-4" aria-hidden="true" />
               {t("bugs.view.board")}
             </Button>
+            <Button
+              variant={view === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+              className="h-8"
+            >
+              <LayoutGrid className="me-1.5 h-4 w-4" aria-hidden="true" />
+              Cards
+            </Button>
           </div>
+
           {/* Stats toggle */}
           <Button
             variant="ghost"
