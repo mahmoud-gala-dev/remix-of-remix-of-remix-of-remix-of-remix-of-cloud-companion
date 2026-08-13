@@ -494,7 +494,7 @@ function DashboardPage() {
         </SectionCard>
       </div>
 
-      <TeamFlowMap />
+
 
       <RoleDashboardPanels role={role} recentBugs={recentBugs} />
     </main>
