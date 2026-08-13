@@ -8,6 +8,8 @@ import {
   Download,
   FileUp,
   KanbanSquare,
+  LayoutGrid,
+
   List,
   Plus,
   FileSpreadsheet,
