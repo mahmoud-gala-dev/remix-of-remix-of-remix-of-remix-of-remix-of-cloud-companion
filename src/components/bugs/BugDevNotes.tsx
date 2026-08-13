@@ -418,7 +418,7 @@ export function BugDevNotes({
                   onChange={(content) => patch.mutate({ id: note.id, content })}
                 />
               )}
-              {note.kind === "mindmap" && <MindBranch nodes={parseMindMap(note.content)} />}
+              {note.kind === "mindmap" && <MindMap note={note} />}
             </article>
           );
         })}
