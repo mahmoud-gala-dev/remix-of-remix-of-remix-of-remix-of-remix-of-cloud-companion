@@ -55,6 +55,9 @@ const COPY = {
     idLabel: "معرّف الحساب",
     critical: "حرجة",
     roleLabel: "الدور",
+    expand: "ملء الشاشة",
+    collapse: "إنهاء ملء الشاشة",
+
   },
 } as const;
 
