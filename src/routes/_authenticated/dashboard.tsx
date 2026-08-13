@@ -255,7 +255,10 @@ function DashboardPage() {
         />
       </section>
 
+      <TeamFlowMap />
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+
         <div className="lg:col-span-3">
           <SectionCard title={t("dash.card.resolvedVsRemaining")} icon={Target}>
             {baseStats.total ? (
