@@ -92,10 +92,16 @@ export function BugKanbanBoard({
             aria-label={`${status} column`}
             onDragOver={(event) => {
               event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
               setOverStatus(status);
             }}
+            onDragEnter={(event) => event.preventDefault()}
             onDragLeave={() => setOverStatus((current) => (current === status ? null : current))}
-            onDrop={() => drop(status)}
+            onDrop={(event) => {
+              event.preventDefault();
+              drop(status, event.dataTransfer.getData("text/plain") || null);
+            }}
+
             className={cn(
               "flex min-h-[220px] flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5 transition-colors",
               overStatus === status && "border-primary/60 bg-primary/5",
