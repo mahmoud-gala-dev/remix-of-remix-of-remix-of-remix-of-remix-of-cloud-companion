@@ -611,6 +611,20 @@ function BugsPage() {
             <Download className="me-2 h-4 w-4" />
             {t("bugs.template")}
           </Button>
+          {/* Pick the destination project before uploading a spreadsheet from this page. */}
+          <Select value={importProject} onValueChange={setImportProject}>
+            <SelectTrigger className="h-9 w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">No project</SelectItem>
+              {(projects ?? []).map((project) => (
+                <SelectItem key={project.id} value={String(project.id)}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <label className="cursor-pointer">
             <Button variant="outline" asChild disabled={importing} size="sm">
               <span>
@@ -626,6 +640,22 @@ function BugsPage() {
               onChange={handleFileUpload}
             />
           </label>
+          {isAdmin && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("completed")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete completed
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("project")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete by project
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setPurgeMode("all")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete all bugs
+              </Button>
+            </>
+          )}
           {canReport && (
             <Button size="sm" asChild>
               <Link to="/bugs/new">
