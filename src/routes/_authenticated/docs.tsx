@@ -53,6 +53,14 @@ const COPY = {
     open: "Open module",
     empty: "No module matches your search.",
     count: "modules",
+    help: "Ask for help",
+    helpTitle: "Request help with this module",
+    helpDetail: "Your request is sent to the admins and supervisors as a notification.",
+    helpPlaceholder: "What do you need help with?",
+    send: "Send request",
+    cancel: "Cancel",
+    sent: "Help request sent",
+    noAdmins: "No admin is available to receive the request.",
   },
   ar: {
     kicker: "توثيق المنتج",
@@ -63,10 +71,26 @@ const COPY = {
     open: "افتح الموديول",
     empty: "لا يوجد موديول مطابق للبحث.",
     count: "موديول",
+    help: "اطلب مساعدة",
+    helpTitle: "طلب مساعدة في هذا الموديول",
+    helpDetail: "يُرسل الطلب كإشعار إلى المديرين والمشرفين.",
+    helpPlaceholder: "ما الذي تحتاج مساعدة فيه؟",
+    send: "إرسال الطلب",
+    cancel: "إلغاء",
+    sent: "تم إرسال طلب المساعدة",
+    noAdmins: "لا يوجد مدير متاح لاستلام الطلب.",
   },
 } as const;
 
-function DocCard({ mod, lang }: { mod: DocModule; lang: "en" | "ar" }) {
+function DocCard({
+  mod,
+  lang,
+  onAskHelp,
+}: {
+  mod: DocModule;
+  lang: "en" | "ar";
+  onAskHelp: (mod: DocModule) => void;
+}) {
   const copy = COPY[lang];
   const body = mod[lang];
   return (
@@ -89,15 +113,22 @@ function DocCard({ mod, lang }: { mod: DocModule; lang: "en" | "ar" }) {
           </li>
         ))}
       </ul>
-      <Link
-        to={mod.to as "/dashboard"}
-        className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-      >
-        {copy.open} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
-      </Link>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+        <Link
+          to={mod.to as "/dashboard"}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          {copy.open} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+        </Link>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => onAskHelp(mod)}>
+          <LifeBuoy className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+          {copy.help}
+        </Button>
+      </div>
     </article>
   );
 }
+
 
 function DocsPage() {
   const { language } = useI18n();
