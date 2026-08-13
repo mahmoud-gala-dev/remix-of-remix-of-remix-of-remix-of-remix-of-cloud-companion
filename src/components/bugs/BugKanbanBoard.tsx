@@ -83,7 +83,7 @@ export function BugKanbanBoard({
   }
 
   return (
-    <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="grid select-none gap-3 md:grid-cols-3 xl:grid-cols-5">
       {BUG_STATUSES.map((status) => {
         const columnRows = rows.filter((row) => row.status === status);
         return (

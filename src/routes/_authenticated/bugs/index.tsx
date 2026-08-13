@@ -13,11 +13,22 @@ import {
   List,
   Plus,
   FileSpreadsheet,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -157,6 +168,10 @@ function BugsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState("Open");
   const [bulkAssignee, setBulkAssignee] = useState("unassigned");
+  /** Target project for spreadsheet imports started from this page. */
+  const [importProject, setImportProject] = useState("All");
+  const [purgeMode, setPurgeMode] = useState<"all" | "completed" | "project" | null>(null);
+  const [purgeProject, setPurgeProject] = useState("All");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pushSearch = useCallback(
@@ -259,6 +274,32 @@ function BugsPage() {
   const hasActiveFilters = hasActiveBugFilters(filterState);
 
   const canReport = canReportBugs(user?.role);
+  const isAdmin = user?.role === "admin";
+
+  /** Admin-only bulk cleanup: every bug, only the finished ones, or one project. */
+  const purgeMutation = useMutation({
+    mutationFn: async () => {
+      let query = supabase.from("bugs").delete();
+      if (purgeMode === "completed") {
+        query = query.in("status", ["Fixed", "Closed"]);
+      } else if (purgeMode === "project") {
+        if (purgeProject === "All") throw new Error("Pick a project first.");
+        query = query.eq("project_id", Number(purgeProject));
+      } else {
+        query = query.gt("id", 0);
+      }
+      const { error } = await query;
+      if (error) throw new Error(friendlyDbError(error));
+    },
+    onSuccess: () => {
+      setPurgeMode(null);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["bugs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("Bugs deleted");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const selectableRows = useMemo(
     () => rows.filter((bug) => canChangeBugStatus(bug, user)),
     [rows, user],
@@ -460,7 +501,12 @@ function BugsPage() {
               retest: row.retest || null,
               role: row.role || null,
               notes: row.notes || null,
-              project_id: filterState.project !== "All" ? Number(filterState.project) : null,
+              project_id:
+                importProject !== "All"
+                  ? Number(importProject)
+                  : filterState.project !== "All"
+                    ? Number(filterState.project)
+                    : null,
               reported_by: authUser?.id ?? null,
             })
             .select("id")
@@ -602,6 +648,20 @@ function BugsPage() {
             <Download className="me-2 h-4 w-4" />
             {t("bugs.template")}
           </Button>
+          {/* Pick the destination project before uploading a spreadsheet from this page. */}
+          <Select value={importProject} onValueChange={setImportProject}>
+            <SelectTrigger className="h-9 w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">No project</SelectItem>
+              {(projects ?? []).map((project) => (
+                <SelectItem key={project.id} value={String(project.id)}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <label className="cursor-pointer">
             <Button variant="outline" asChild disabled={importing} size="sm">
               <span>
@@ -617,6 +677,22 @@ function BugsPage() {
               onChange={handleFileUpload}
             />
           </label>
+          {isAdmin && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("completed")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete completed
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPurgeMode("project")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete by project
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setPurgeMode("all")}>
+                <Trash2 className="me-2 h-4 w-4" />
+                Delete all bugs
+              </Button>
+            </>
+          )}
           {canReport && (
             <Button size="sm" asChild>
               <Link to="/bugs/new">
@@ -779,6 +855,53 @@ function BugsPage() {
           </div>
         )}
       </Card>
+
+      {/* Admin-only destructive cleanup */}
+      <AlertDialog open={purgeMode !== null} onOpenChange={(open) => !open && setPurgeMode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {purgeMode === "completed"
+                ? "Delete all completed bugs?"
+                : purgeMode === "project"
+                  ? "Delete every bug in one project?"
+                  : "Delete every bug?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected bugs and their comments, attachments and
+              history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {purgeMode === "project" && (
+            <Select value={purgeProject} onValueChange={setPurgeProject}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Choose a project" />
+              </SelectTrigger>
+              <SelectContent>
+                {(projects ?? []).map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                purgeMutation.isPending || (purgeMode === "project" && purgeProject === "All")
+              }
+              onClick={(event) => {
+                event.preventDefault();
+                purgeMutation.mutate();
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

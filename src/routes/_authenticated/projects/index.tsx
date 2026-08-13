@@ -89,12 +89,41 @@ function ProjectsPage() {
   const queryClient = useQueryClient();
   const isAdmin = user?.role === "admin";
 
-  const { data: projects, isLoading } = useQuery({
+  const { data: allProjects, isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: fetchProjects,
     enabled: !!user,
   });
   const { data: bugs } = useQuery({ queryKey: ["bugs"], queryFn: fetchBugs, enabled: !!user });
+
+  // Testers and developers only see workspaces they belong to: projects they were
+  // added to as developers, projects they created, or projects where they already
+  // report / own bugs.
+  const scoped = user?.role === "tester" || user?.role === "developer";
+  const { data: memberProjectIds } = useQuery({
+    queryKey: ["my-project-memberships", user?.id],
+    enabled: !!user?.id && scoped,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_developers")
+        .select("project_id")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []).map((row) => row.project_id);
+    },
+  });
+
+  const projects = useMemo(() => {
+    if (!scoped || !user?.id) return allProjects ?? [];
+    const allowed = new Set<number>(memberProjectIds ?? []);
+    for (const bug of bugs ?? []) {
+      if (!bug.project_id) continue;
+      if (bug.reported_by === user.id || bug.assigned_to === user.id) allowed.add(bug.project_id);
+    }
+    return (allProjects ?? []).filter(
+      (project) => allowed.has(project.id) || project.created_by === user.id,
+    );
+  }, [allProjects, bugs, memberProjectIds, scoped, user?.id]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);

@@ -36,6 +36,7 @@ import { BugInfoPanel } from "@/components/bugs/BugInfoPanel";
 import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
 import { BugDevNotes } from "@/components/bugs/BugDevNotes";
+import { BugAiPrompt } from "@/components/bugs/BugAiPrompt";
 
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
@@ -315,8 +316,10 @@ function BugDetailPage() {
             canWrite={canEdit || canTrackResolutionTime}
             profileMap={profileMap}
           />
+          {user?.role === "developer" && <BugAiPrompt bug={bug} />}
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
           <BugAttachments bugId={bug.id} />
+
 
         </div>
         <div className="space-y-6">
