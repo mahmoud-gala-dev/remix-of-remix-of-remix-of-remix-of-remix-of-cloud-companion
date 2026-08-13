@@ -291,26 +291,27 @@ export function TeamFlowMap() {
             </svg>
 
             {active && positions.get(active) && (
-              <div className="pointer-events-none absolute top-2 end-3 rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
-                <p className="font-semibold">
+              <div className="pointer-events-none absolute top-2 end-3 max-w-[60%] rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
+                <p className="truncate font-semibold">
                   {positions.get(active)!.node.unknown
                     ? copy.unknownMember
                     : positions.get(active)!.node.name}
                 </p>
-                <p className="font-mono text-[10px] text-muted-foreground">
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
                   {copy.roleLabel}: {positions.get(active)!.node.role ?? positions.get(active)!.node.side}
                 </p>
-                <p className="font-mono text-[10px] text-muted-foreground">
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
                   {positions.get(active)!.node.total} {copy.errors} · {positions.get(active)!.node.open}{" "}
                   {copy.open} · {positions.get(active)!.node.critical} {copy.critical}
                 </p>
               </div>
             )}
 
-            <div className="pointer-events-none absolute bottom-2 start-3 font-mono text-[10px] text-muted-foreground">
+            <div className="pointer-events-none absolute bottom-2 start-3 end-3 truncate font-mono text-[10px] text-muted-foreground">
               {graph.testers.length} {copy.testers} / {graph.developers.length} {copy.developers} ·{" "}
               {graph.links.length} {copy.links} · {graph.unassigned} {copy.unassigned} · {copy.hint}
             </div>
+
           </div>
 
           {focus && (
