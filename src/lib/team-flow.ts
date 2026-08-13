@@ -5,6 +5,10 @@ export type FlowNode = {
   id: string;
   name: string;
   side: "tester" | "developer";
+  /** Role from user_roles when known, e.g. developer / tester. */
+  role: string | null;
+  /** True when no profile row exists, so only the short id is available. */
+  unknown: boolean;
   total: number;
   open: number;
   critical: number;
@@ -49,6 +53,8 @@ export function buildFlowGraph(
       ({
         id,
         name: names[id] ?? id.slice(0, 8),
+        role: roles[id] ?? null,
+        unknown: !names[id],
         side,
         total: 0,
         open: 0,

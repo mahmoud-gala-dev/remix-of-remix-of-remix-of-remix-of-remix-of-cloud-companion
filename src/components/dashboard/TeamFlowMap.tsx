@@ -27,6 +27,10 @@ const COPY = {
     hint: "hover a node to trace its routes · click to focus",
     related: "Related errors",
     viewAll: "Open in error list",
+    unknownMember: "Deleted / unlinked account",
+    idLabel: "account id",
+    critical: "critical",
+    roleLabel: "role",
   },
   ar: {
     title: "خريطة تفاعل الفريق",
@@ -44,6 +48,10 @@ const COPY = {
     hint: "مرّر على أي عضو لتتبع مساراته · اضغط للتركيز",
     related: "الأخطاء المرتبطة",
     viewAll: "افتح في قائمة الأخطاء",
+    unknownMember: "حساب محذوف أو غير مرتبط بملف تعريف",
+    idLabel: "معرّف الحساب",
+    critical: "حرجة",
+    roleLabel: "الدور",
   },
 } as const;
 
@@ -245,13 +253,20 @@ export function TeamFlowMap() {
                     />
                     <circle cx={x} cy={y} r={r} fill={color} fillOpacity={0.22} stroke={color} />
                     <circle cx={x} cy={y} r={4} fill={node.open > 0 ? "var(--chart-1)" : color} />
+                    <title>
+                      {`${node.unknown ? copy.unknownMember : node.name} · ${copy.roleLabel}: ${
+                        node.role ?? (isTester ? copy.testers : copy.developers)
+                      } · ${node.total} ${copy.errors} · ${node.open} ${copy.open} · ${
+                        node.critical
+                      } ${copy.critical}${node.unknown ? ` · ${copy.idLabel}: ${node.id}` : ""}`}
+                    </title>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
                       y={y - 2}
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-foreground font-mono text-[12px] font-semibold"
                     >
-                      {node.name}
+                      {node.unknown ? copy.unknownMember : node.name}
                     </text>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
@@ -259,12 +274,31 @@ export function TeamFlowMap() {
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-muted-foreground font-mono text-[10px]"
                     >
+                      {(node.role ?? (isTester ? "tester" : "developer")) + " · "}
                       {node.total} {copy.errors} · {node.open} {copy.open}
+                      {node.critical > 0 ? ` · ${node.critical} ${copy.critical}` : ""}
                     </text>
                   </g>
                 );
               })}
             </svg>
+
+            {active && positions.get(active) && (
+              <div className="pointer-events-none absolute top-2 end-3 rounded-lg border border-border/60 bg-card/95 px-3 py-2 text-xs shadow-lg">
+                <p className="font-semibold">
+                  {positions.get(active)!.node.unknown
+                    ? copy.unknownMember
+                    : positions.get(active)!.node.name}
+                </p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {copy.roleLabel}: {positions.get(active)!.node.role ?? positions.get(active)!.node.side}
+                </p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {positions.get(active)!.node.total} {copy.errors} · {positions.get(active)!.node.open}{" "}
+                  {copy.open} · {positions.get(active)!.node.critical} {copy.critical}
+                </p>
+              </div>
+            )}
 
             <div className="pointer-events-none absolute bottom-2 start-3 font-mono text-[10px] text-muted-foreground">
               {graph.testers.length} {copy.testers} / {graph.developers.length} {copy.developers} ·{" "}
@@ -276,7 +310,7 @@ export function TeamFlowMap() {
             <div className="rounded-xl border border-border/60 bg-card p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold">
-                  {copy.related} · {names[focus] ?? focus.slice(0, 8)}
+                  {copy.related} · {names[focus] ?? copy.unknownMember}
                 </p>
                 <Button asChild size="sm" variant="ghost" className="h-8">
                   <Link to="/bugs" search={{ assignee: focus }}>
