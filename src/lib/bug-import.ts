@@ -64,43 +64,110 @@ export function normalizeStatus(v: string) {
   return (BUG_STATUSES as readonly string[]).includes(val) ? val : "Open";
 }
 
+/** Loose comparison so "Bug ID", "bug_id" and " BUG-ID " all match. */
+function normalizeHeader(value: unknown) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[\s_\-.]+/g, "");
+}
+
+const HEADER_ALIASES: Record<string, string[]> = {
+  "Bug ID": ["bugid", "id", "code", "bugcode", "معرفالخطأ", "رقمالخطأ"],
+  Module: ["module", "area", "feature", "الموديول", "الوحدة"],
+  Title: ["title", "summary", "name", "العنوان"],
+  "Steps to Reproduce": ["stepstoreproduce", "steps", "repro", "خطواتالتكرار", "الخطوات"],
+  Environment: ["environment", "env", "البيئة"],
+  "Expected Result": ["expectedresult", "expected", "النتيجةالمتوقعة"],
+  "Actual Result": ["actualresult", "actual", "النتيجةالفعلية"],
+  Priority: ["priority", "الأولوية", "الاولوية"],
+  Severity: ["severity", "الخطورة"],
+  "Reported By": ["reportedby", "reporter", "بواسطة", "المُبلغ", "المبلغ"],
+  Status: ["status", "state", "الحالة"],
+  Retest: ["retest", "إعادةالاختبار", "اعادةالاختبار"],
+  Role: ["role", "الدور"],
+  Notes: ["notes", "note", "comments", "ملاحظات"],
+};
+
+/**
+ * Finds the row that holds the column headers (files exported elsewhere may or
+ * may not have a title row) and maps each expected column to its index.
+ */
+export function locateHeaderRow(rawData: unknown[][]) {
+  const expected = [...BUG_IMPORT_HEADERS];
+  let best = { rowIndex: -1, matches: 0, indexes: {} as Record<string, number> };
+
+  for (let rowIndex = 0; rowIndex < Math.min(rawData.length, 10); rowIndex++) {
+    const cells = (rawData[rowIndex] ?? []).map(normalizeHeader);
+    const indexes: Record<string, number> = {};
+    let matches = 0;
+    for (const header of expected) {
+      const aliases = [normalizeHeader(header), ...(HEADER_ALIASES[header] ?? [])];
+      const index = cells.findIndex((cell) => cell !== "" && aliases.includes(cell));
+      if (index >= 0) {
+        indexes[header] = index;
+        matches++;
+      }
+    }
+    if (matches > best.matches) best = { rowIndex, matches, indexes };
+  }
+
+  return best;
+}
+
 export function parseBugImportRows(rawData: unknown[][]): ParsedBugImportRow[] {
+  const header = locateHeaderRow(rawData);
+  const startRow = header.rowIndex >= 0 ? header.rowIndex + 1 : 2;
+  const at = (row: unknown[], name: string, fallbackIndex: number) => {
+    const index = header.indexes[name] ?? fallbackIndex;
+    return row[index]?.toString().trim() ?? "";
+  };
+
   return rawData
-    .slice(2)
-    .map((row, index) => {
-      const vals = Object.values(row ?? []);
+    .slice(startRow)
+    .map((raw, index) => {
+      const vals = Object.values(raw ?? []) as unknown[];
       return {
-        excelRowNumber: index + 3,
-        bug_id: vals[0]?.toString() ?? "",
-        module: vals[1]?.toString() ?? "",
-        title: vals[2]?.toString() ?? "",
-        steps: vals[3]?.toString() ?? "",
-        environment: vals[4]?.toString() ?? "",
-        expected_result: vals[5]?.toString() ?? "",
-        actual_result: vals[6]?.toString() ?? "",
-        priority: vals[7]?.toString() ?? "",
-        severity: vals[8]?.toString() ?? "",
-        status: vals[10]?.toString() ?? "",
-        retest: vals[11]?.toString() ?? "",
-        role: vals[12]?.toString() ?? "",
-        notes: vals[13]?.toString() ?? "",
+        excelRowNumber: startRow + index + 1,
+        bug_id: at(vals, "Bug ID", 0),
+        module: at(vals, "Module", 1),
+        title: at(vals, "Title", 2),
+        steps: at(vals, "Steps to Reproduce", 3),
+        environment: at(vals, "Environment", 4),
+        expected_result: at(vals, "Expected Result", 5),
+        actual_result: at(vals, "Actual Result", 6),
+        priority: at(vals, "Priority", 7),
+        severity: at(vals, "Severity", 8),
+        status: at(vals, "Status", 10),
+        retest: at(vals, "Retest", 11),
+        role: at(vals, "Role", 12),
+        notes: at(vals, "Notes", 13),
       };
     })
     .filter((row) => !isEmptyImportRow(row) && row.bug_id !== row.module);
 }
 
 export function validateAndParseBugImportRows(rawData: unknown[][]): BugImportValidation {
-  const headerRow = (rawData[1] ?? []).map((value) => String(value ?? "").trim());
+  const header = locateHeaderRow(rawData);
   const expected = [...BUG_IMPORT_HEADERS];
   const rows = parseBugImportRows(rawData);
-  const dataRowCount = rawData.slice(2).length;
+  const startRow = header.rowIndex >= 0 ? header.rowIndex + 1 : 2;
+  const dataRowCount = rawData.slice(startRow).length;
+  // Only Bug ID and Title are structurally required; the rest can be absent.
+  const required = ["Bug ID", "Title"];
+  const missingHeaders = required.filter((name) => header.indexes[name] === undefined);
+  const headerCells = (rawData[Math.max(header.rowIndex, 0)] ?? []).map((value) =>
+    String(value ?? "").trim(),
+  );
+  const matchedIndexes = new Set(Object.values(header.indexes));
   return {
     rows,
-    missingHeaders: expected.filter((header, index) => headerRow[index] !== header),
-    unexpectedHeaders: headerRow.filter(
-      (header, index) => Boolean(header) && expected[index] !== header,
+    missingHeaders,
+    unexpectedHeaders: headerCells.filter(
+      (cell, index) => Boolean(cell) && !matchedIndexes.has(index),
     ),
     skippedEmpty: Math.max(dataRowCount - rows.length, 0),
+    recognizedHeaders: expected.filter((name) => header.indexes[name] !== undefined),
   };
 }
+
 
