@@ -263,6 +263,32 @@ function BugsPage() {
   const hasActiveFilters = hasActiveBugFilters(filterState);
 
   const canReport = canReportBugs(user?.role);
+  const isAdmin = user?.role === "admin";
+
+  /** Admin-only bulk cleanup: every bug, only the finished ones, or one project. */
+  const purgeMutation = useMutation({
+    mutationFn: async () => {
+      let query = supabase.from("bugs").delete();
+      if (purgeMode === "completed") {
+        query = query.in("status", ["Fixed", "Closed"]);
+      } else if (purgeMode === "project") {
+        if (purgeProject === "All") throw new Error("Pick a project first.");
+        query = query.eq("project_id", Number(purgeProject));
+      } else {
+        query = query.gt("id", 0);
+      }
+      const { error } = await query;
+      if (error) throw new Error(friendlyDbError(error));
+    },
+    onSuccess: () => {
+      setPurgeMode(null);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["bugs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("Bugs deleted");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const selectableRows = useMemo(
     () => rows.filter((bug) => canChangeBugStatus(bug, user)),
     [rows, user],
