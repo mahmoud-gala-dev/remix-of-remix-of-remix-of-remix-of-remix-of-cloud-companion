@@ -718,7 +718,16 @@ function BugsPage() {
 
         {view === "board" ? (
           <BugKanbanBoard rows={rows} isLoading={isLoading} user={user} profileMap={profileMap} />
+        ) : view === "cards" ? (
+          <BugCardGrid
+            rows={rows}
+            isLoading={isLoading}
+            profileMap={profileMap}
+            projectMap={projectMap}
+            emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
+          />
         ) : (
+
           <BugTable
             rows={rows}
             isLoading={isLoading}
