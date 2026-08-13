@@ -127,7 +127,12 @@ export function BugKanbanBoard({
                   <article
                     key={bug.id}
                     draggable={editable}
-                    onDragStart={() => setDraggingId(bug.id)}
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData("text/plain", String(bug.id));
+                      event.dataTransfer.effectAllowed = "move";
+                      setDraggingId(bug.id);
+                    }}
+
                     onDragEnd={() => setDraggingId(null)}
                     className={cn(
                       "rounded-lg border border-border/60 bg-card p-2.5 shadow-sm transition-opacity",
