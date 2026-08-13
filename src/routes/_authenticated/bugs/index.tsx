@@ -154,7 +154,7 @@ function BugsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pushSearch = useCallback(
-    (next: BugFilterState, extra: { page: number; view: "table" | "board" }) => {
+    (next: BugFilterState, extra: { page: number; view: BugsView }) => {
       navigate({
         search: filterStateToSearch(next, extra) as never,
         replace: true,
