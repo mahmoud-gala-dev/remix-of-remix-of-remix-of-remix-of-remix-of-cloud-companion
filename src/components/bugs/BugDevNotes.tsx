@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
+import { TOKEN_CLASS, tokenizeLine } from "@/lib/code-highlight";
 import { nameFor, type ProfileMap } from "@/components/bugs/types";
 import {
   CODE_LANGUAGES,
