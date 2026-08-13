@@ -155,7 +155,10 @@ function ProjectDetailPage() {
   const importMutation = useMutation({
     mutationFn: (file: File) => importBugsFromExcel({ file, projectId }),
     onSuccess: (result) => {
-      toast.success(`Imported ${result.inserted} bug(s), skipped ${result.skipped}`);
+      toast.success(
+        `Imported ${result.imported} bug(s) · ${result.duplicates} duplicate(s) · ${result.failures.length} failed`,
+      );
+
       queryClient.invalidateQueries({ queryKey: ["bugs"] });
       queryClient.invalidateQueries({ queryKey: ["project-bugs", projectId] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
