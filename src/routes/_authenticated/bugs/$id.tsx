@@ -35,6 +35,8 @@ import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { BugInfoPanel } from "@/components/bugs/BugInfoPanel";
 import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
+import { BugDevNotes } from "@/components/bugs/BugDevNotes";
+
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
 import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
