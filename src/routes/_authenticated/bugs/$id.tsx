@@ -307,8 +307,15 @@ function BugDetailPage() {
             canEdit={canEdit}
             canEditStatus={canChangeStatus}
           />
+          <BugDevNotes
+            bugId={bug.id}
+            currentUserId={user?.id ?? null}
+            canWrite={canEdit || canTrackResolutionTime}
+            profileMap={profileMap}
+          />
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
           <BugAttachments bugId={bug.id} />
+
         </div>
         <div className="space-y-6">
           <BugResolutionTimer
