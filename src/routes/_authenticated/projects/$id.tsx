@@ -1,9 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ClipboardList, FolderKanban, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  FileDown,
+  FolderKanban,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { downloadBugImportTemplate } from "@/lib/bug-excel";
+import { importBugsFromExcel } from "@/lib/bug-excel-import";
+
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
