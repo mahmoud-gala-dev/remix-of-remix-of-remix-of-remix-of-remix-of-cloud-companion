@@ -1,11 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyDbError } from "@/lib/api";
 import {
+  generateBugId,
   normalizePriority,
   normalizeSeverity,
   normalizeStatus,
   validateAndParseBugImportRows,
 } from "@/lib/bug-import";
+
 
 export type ExcelImportFailure = { excelRowNumber: number; bugId: string; reason: string };
 
