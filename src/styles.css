@@ -197,3 +197,42 @@
 aside#lovable-badge {
   display: none !important;
 }
+
+/* Team Flow Map — animated routing between testers and developers. */
+@keyframes team-flow-dash {
+  to {
+    stroke-dashoffset: -64;
+  }
+}
+@keyframes team-flow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes team-flow-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.15;
+  }
+}
+.team-flow-dash {
+  animation: team-flow-dash 1.6s linear infinite;
+}
+.team-flow-spin {
+  animation: team-flow-spin 60s linear infinite;
+}
+.team-flow-pulse {
+  animation: team-flow-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-flow-dash,
+  .team-flow-spin,
+  .team-flow-pulse {
+    animation: none;
+  }
+}
