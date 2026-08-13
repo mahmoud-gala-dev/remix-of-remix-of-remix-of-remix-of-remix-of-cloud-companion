@@ -57,8 +57,8 @@ const COPY = {
 
 const WIDTH = 920;
 const HEIGHT = 460;
-const LEFT_X = 170;
-const RIGHT_X = 750;
+const LEFT_X = 215;
+const RIGHT_X = 705;
 
 function laneY(index: number, count: number) {
   if (count <= 1) return HEIGHT / 2;
@@ -71,6 +71,12 @@ function radiusFor(node: FlowNode, max: number) {
   const scale = max > 0 ? node.total / max : 0;
   return 10 + scale * 12;
 }
+
+/** Keeps long member names inside the card instead of clipping past the edge. */
+function shortLabel(value: string, max = 18) {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
 
 export function TeamFlowMap() {
   const { language } = useI18n();
