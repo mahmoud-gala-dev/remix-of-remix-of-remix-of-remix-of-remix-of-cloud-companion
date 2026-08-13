@@ -37,14 +37,14 @@ const LITERALS = ["true", "false", "null", "undefined", "None", "True", "False"]
 
 function keywordsFor(language: string) {
   const lang = language.toLowerCase();
-  if (["ts", "tsx", "js", "jsx", "javascript", "typescript"].includes(lang)) return KEYWORDS.ts!;
-  if (["py", "python"].includes(lang)) return KEYWORDS.py!;
-  if (lang === "sql") return KEYWORDS.sql!;
-  if (lang === "json") return KEYWORDS.json!;
-  if (["bash", "sh", "shell"].includes(lang)) return KEYWORDS.bash!;
-  if (["css", "scss"].includes(lang)) return KEYWORDS.css!;
+  if (["ts", "tsx", "js", "jsx", "javascript", "typescript"].includes(lang)) return KEYWORDS['ts']!;
+  if (["py", "python"].includes(lang)) return KEYWORDS['py']!;
+  if (lang === "sql") return KEYWORDS['sql']!;
+  if (lang === "json") return KEYWORDS['json']!;
+  if (["bash", "sh", "shell"].includes(lang)) return KEYWORDS['bash']!;
+  if (["css", "scss"].includes(lang)) return KEYWORDS['css']!;
   if (["html", "xml"].includes(lang)) return [];
-  return KEYWORDS.ts!;
+  return KEYWORDS['ts']!;
 }
 
 const COMMENT_PREFIX: Record<string, string> = {
