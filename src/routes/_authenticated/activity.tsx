@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Bug, MessageSquare, MessagesSquare, RefreshCw } from "lucide-react";
@@ -6,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
-import { fetchActivity, timeAgo, type ActivityItem } from "@/lib/activity";
+import { fetchActivityPage, timeAgo, type ActivityItem } from "@/lib/activity";
 import { fetchProfiles } from "@/lib/api";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => ({
