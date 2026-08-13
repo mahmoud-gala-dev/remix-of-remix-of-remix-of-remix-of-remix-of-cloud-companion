@@ -193,14 +193,22 @@ function inferTitleIndex(rawData: unknown[][], startRow: number, used: Set<numbe
 /** Resolved column layout: header row position plus per-column indexes. */
 export function resolveBugImportColumns(rawData: unknown[][]) {
   const header = locateHeaderRow(rawData);
+  const hadHeaderRow = header.rowIndex >= 0;
   const indexes = { ...header.indexes };
-  const startRow = header.rowIndex >= 0 ? header.rowIndex + 1 : 0;
+  // Without a recognizable header row we assume the export template layout.
+  const startRow = hadHeaderRow ? header.rowIndex + 1 : 2;
+  if (!hadHeaderRow) {
+    BUG_IMPORT_HEADERS.forEach((name, index) => {
+      indexes[name] = index;
+    });
+  }
   if (indexes["Title"] === undefined) {
     const inferred = inferTitleIndex(rawData, startRow, new Set(Object.values(indexes)));
     if (inferred >= 0) indexes["Title"] = inferred;
   }
-  return { startRow, indexes, matches: header.matches, hadHeaderRow: header.rowIndex >= 0 };
+  return { startRow, indexes, matches: header.matches, hadHeaderRow };
 }
+
 
 export function parseBugImportRows(rawData: unknown[][]): ParsedBugImportRow[] {
   const { startRow, indexes } = resolveBugImportColumns(rawData);
