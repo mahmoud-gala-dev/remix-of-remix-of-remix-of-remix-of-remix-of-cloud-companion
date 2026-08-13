@@ -13,6 +13,7 @@ import {
   List,
   Plus,
   FileSpreadsheet,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
