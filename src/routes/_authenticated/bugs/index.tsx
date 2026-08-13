@@ -72,6 +72,8 @@ import {
   parseBugsSearch,
   searchToFilterState,
   type BugsSearch,
+  type BugsView,
+
 } from "@/lib/bug-filter-url";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
