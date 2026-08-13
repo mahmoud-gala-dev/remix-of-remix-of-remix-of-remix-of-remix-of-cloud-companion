@@ -10,7 +10,6 @@ import {
   KeyboardShortcutsDialog,
 } from "@/components/common/KeyboardShortcutsDialog";
 
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +35,7 @@ import { BugInfoPanel } from "@/components/bugs/BugInfoPanel";
 import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
 import { BugDevNotes } from "@/components/bugs/BugDevNotes";
-import { BugAiPrompt } from "@/components/bugs/BugAiPrompt";
+import { BugAiPrompt, bugToPlainText } from "@/components/bugs/BugAiPrompt";
 
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
@@ -81,7 +80,6 @@ function BugDetailPage() {
   const [waitingRevision, setWaitingRevision] = useState(0);
   // Derived synchronously — cheap, no useEffect needed.
   const [waitingNow, setWaitingNow] = useState(() => isWaiting(bugId));
-
 
   const { data: bug, isLoading } = useQuery({
     queryKey: ["bug", bugId],
@@ -192,7 +190,6 @@ function BugDetailPage() {
     [waitingNow, nextBugId, navigate, t],
   );
 
-
   if (isLoading) {
     return (
       <div className="space-y-4 p-6">
@@ -248,6 +245,7 @@ function BugDetailPage() {
     user?.role === "supervisor";
   const canTrackResolutionTime =
     user?.role === "developer" && (!bug.assigned_to || bug.assigned_to === user.id);
+  const canWriteDeveloperWorkspace = isStaff || canTrackResolutionTime;
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -282,7 +280,6 @@ function BugDetailPage() {
             onOpenChange={setShortcutsOpen}
           />
           <div className="flex items-center gap-1">
-
             <Button
               variant="outline"
               size="sm"
@@ -325,23 +322,25 @@ function BugDetailPage() {
           )}
 
           {canDelete && (
-          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="me-1.5 h-3.5 w-3.5" /> {t("bug.delete")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("bug.delete.title")}</AlertDialogTitle>
-                <AlertDialogDescription>{t("bug.delete.body")}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => deleteBug.mutate()}>{t("common.delete")}</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="me-1.5 h-3.5 w-3.5" /> {t("bug.delete")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("bug.delete.title")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("bug.delete.body")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteBug.mutate()}>
+                    {t("common.delete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>
@@ -361,14 +360,13 @@ function BugDetailPage() {
           <BugDevNotes
             bugId={bug.id}
             currentUserId={user?.id ?? null}
-            canWrite={canEdit || canTrackResolutionTime}
+            canWrite={canWriteDeveloperWorkspace}
             profileMap={profileMap}
+            bugText={bugToPlainText(bug)}
           />
           {user?.role === "developer" && <BugAiPrompt bug={bug} />}
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
           <BugAttachments bugId={bug.id} />
-
-
         </div>
         <div className="space-y-6">
           <BugResolutionTimer
@@ -396,9 +394,7 @@ function BugDetailPage() {
       />
 
       {/* Waiting bugs list — personal deferred bugs stored in localStorage */}
-      {user?.role === "developer" && (
-        <WaitingBugsList refreshSignal={waitingRevision} />
-      )}
+      {user?.role === "developer" && <WaitingBugsList refreshSignal={waitingRevision} />}
     </div>
   );
 }

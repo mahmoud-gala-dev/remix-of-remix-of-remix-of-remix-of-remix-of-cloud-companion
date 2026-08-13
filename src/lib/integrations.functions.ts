@@ -8,6 +8,8 @@ type AuthedContext = {
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    // Supabase's fluent query builder is intentionally kept loose in this server-fn shim.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     from: (table: string) => any;
   };
   userId: string;
@@ -20,6 +22,42 @@ async function requireAdmin(context: AuthedContext) {
   });
   if (error) throw new Error(error.message);
   if (data !== true) throw new Error("Only admins can change integration settings.");
+}
+
+async function runCompletionForUser(ctx: AuthedContext, prompt: string) {
+  const { decryptSecret, GEMINI_ONLY_ROLES, geminiComplete, loadSettings, lovableComplete } =
+    await import("@/lib/integrations.server");
+  const settings = await loadSettings();
+  const { data: roleRow } = await ctx.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+  const role = (roleRow?.role as string | undefined) ?? null;
+  const geminiOnly = role ? GEMINI_ONLY_ROLES.includes(role) : false;
+  const provider = geminiOnly ? "gemini" : settings.ai_default_provider;
+
+  if (provider === "gemini") {
+    const { data: keyRow } = await ctx.supabase
+      .from("user_ai_keys")
+      .select("api_key_ciphertext")
+      .eq("user_id", ctx.userId)
+      .eq("provider", "gemini")
+      .maybeSingle();
+    const apiKey = keyRow?.api_key_ciphertext
+      ? decryptSecret(keyRow.api_key_ciphertext as string)
+      : process.env["GOOGLE_API_KEY"];
+    if (!apiKey) {
+      throw new Error(
+        geminiOnly
+          ? "Add your own Gemini API key in Settings to use the assistant."
+          : "No Gemini API key is configured.",
+      );
+    }
+    return { provider, text: await geminiComplete(apiKey, settings.gemini_model, prompt) };
+  }
+
+  return { provider: "lovable", text: await lovableComplete(prompt) };
 }
 
 /** Full integration settings — admins only. */
@@ -118,20 +156,14 @@ export const testIntegration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const target = (input as { target?: unknown })?.target;
-    if (
-      target !== "slack" &&
-      target !== "github" &&
-      target !== "firebase" &&
-      target !== "ai"
-    ) {
+    if (target !== "slack" && target !== "github" && target !== "firebase" && target !== "ai") {
       throw new Error("Unknown integration.");
     }
     return { target };
   })
   .handler(async ({ data, context }) => {
-    const { geminiComplete, loadSettings, lovableComplete, postToSlack } = await import(
-      "@/lib/integrations.server"
-    );
+    const { geminiComplete, loadSettings, lovableComplete, postToSlack } =
+      await import("@/lib/integrations.server");
     await requireAdmin(context as unknown as AuthedContext);
     const settings = await loadSettings();
     const started = Date.now();
@@ -179,7 +211,8 @@ export const testIntegration = createServerFn({ method: "POST" })
         if (missing.length > 0) {
           throw new Error(`The Firebase web config is missing: ${missing.join(", ")}.`);
         }
-        if (!settings.firebase_vapid_key) throw new Error("Add the Web Push (VAPID) certificate key.");
+        if (!settings.firebase_vapid_key)
+          throw new Error("Add the Web Push (VAPID) certificate key.");
         const { verifyFirebase } = await import("@/lib/integrations.server");
         const { projectId } = await verifyFirebase();
         if (config["projectId"] && config["projectId"] !== projectId) {
@@ -263,8 +296,9 @@ export const notifyBugEvent = createServerFn({ method: "POST" })
       project = row?.name ?? null;
     }
 
-    const recipients = [bug.assigned_to, bug.reported_by]
-      .filter((id): id is string => Boolean(id) && id !== ctx.userId);
+    const recipients = [bug.assigned_to, bug.reported_by].filter(
+      (id): id is string => Boolean(id) && id !== ctx.userId,
+    );
 
     return dispatchBugEvent(
       {
@@ -367,39 +401,7 @@ export const runAiPrompt = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as AuthedContext;
-    const { decryptSecret, GEMINI_ONLY_ROLES, geminiComplete, loadSettings, lovableComplete } =
-      await import("@/lib/integrations.server");
-    const settings = await loadSettings();
-    const { data: roleRow } = await ctx.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", ctx.userId)
-      .maybeSingle();
-    const role = (roleRow?.role as string | undefined) ?? null;
-    const geminiOnly = role ? GEMINI_ONLY_ROLES.includes(role) : false;
-    const provider = geminiOnly ? "gemini" : settings.ai_default_provider;
-
-    if (provider === "gemini") {
-      const { data: keyRow } = await ctx.supabase
-        .from("user_ai_keys")
-        .select("api_key_ciphertext")
-        .eq("user_id", ctx.userId)
-        .eq("provider", "gemini")
-        .maybeSingle();
-      const apiKey = keyRow?.api_key_ciphertext
-        ? decryptSecret(keyRow.api_key_ciphertext as string)
-        : process.env["GOOGLE_API_KEY"];
-      if (!apiKey) {
-        throw new Error(
-          geminiOnly
-            ? "Add your own Gemini API key in Settings to use the assistant."
-            : "No Gemini API key is configured.",
-        );
-      }
-      return { provider, text: await geminiComplete(apiKey, settings.gemini_model, data.prompt) };
-    }
-
-    return { provider: "lovable", text: await lovableComplete(data.prompt) };
+    return runCompletionForUser(ctx, data.prompt);
   });
 
 /* ------------------------------------------------------------------ *
@@ -415,7 +417,8 @@ export const registerDeviceToken = createServerFn({ method: "POST" })
     return {
       token,
       platform: typeof data["platform"] === "string" ? (data["platform"] as string) : "web",
-      userAgent: typeof data["userAgent"] === "string" ? (data["userAgent"] as string).slice(0, 300) : null,
+      userAgent:
+        typeof data["userAgent"] === "string" ? (data["userAgent"] as string).slice(0, 300) : null,
     };
   })
   .handler(async ({ data, context }) => {
@@ -463,7 +466,10 @@ export const sendPushTest = createServerFn({ method: "POST" })
       "ElectroPI Bug Tracker",
       "Push notifications are configured correctly.",
     );
-    if (sent === 0) throw new Error("No device received the notification. Enable notifications on this device first.");
+    if (sent === 0)
+      throw new Error(
+        "No device received the notification. Enable notifications on this device first.",
+      );
     return { sent };
   });
 
@@ -494,7 +500,12 @@ export const linkBugToGithub = createServerFn({ method: "POST" })
     if (data.clear) {
       const { error } = await ctx.supabase
         .from("bugs")
-        .update({ github_repo: null, github_ref_type: null, github_ref_number: null, github_url: null })
+        .update({
+          github_repo: null,
+          github_ref_type: null,
+          github_ref_number: null,
+          github_url: null,
+        })
         .eq("id", data.bugId);
       if (error) throw new Error(error.message);
       return { ok: true, github_url: null as string | null };

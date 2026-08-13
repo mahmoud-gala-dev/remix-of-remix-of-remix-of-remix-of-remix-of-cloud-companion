@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Braces, CheckCheck, Copy, Download, ListChecks, Network, Plus, Trash2 } from "lucide-react";
+import rtlDetect from "rtl-detect";
+import {
+  Braces,
+  CheckCheck,
+  Copy,
+  Download,
+  Languages,
+  ListChecks,
+  Loader2,
+  Network,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +65,20 @@ const COPY = {
     delete: "Delete",
     by: "by",
     example: "Insert example",
+    readOnly: "Read-only for testers. Developers and supervisors can add or update notes.",
+    translatorTitle: "Translate text",
+    translatorHint:
+      "Paste Arabic or English text, then translate it for a developer note or prompt.",
+    translateTo: "Translate to",
+    toEnglish: "English",
+    toArabic: "Arabic",
+    translate: "Translate",
+    translating: "Translating...",
+    sourceText: "Text to translate",
+    translatedText: "Translation",
+    pasteBug: "Use bug details",
+    copyTranslation: "Copy translation",
+    translated: "Translation ready",
   },
   ar: {
     title: "مساحة المطور",
@@ -74,8 +100,23 @@ const COPY = {
     delete: "حذف",
     by: "بواسطة",
     example: "أدخل مثالًا",
+    readOnly: "عرض فقط للتيستر. المطورون والمشرفون يمكنهم إضافة أو تعديل الملاحظات.",
+    translatorTitle: "ترجمة النص",
+    translatorHint: "الصق نصًا عربيًا أو إنجليزيًا ثم ترجمه لملاحظة المطور أو البرومبت.",
+    translateTo: "الترجمة إلى",
+    toEnglish: "الإنجليزية",
+    toArabic: "العربية",
+    translate: "ترجمة",
+    translating: "جارٍ الترجمة...",
+    sourceText: "النص المراد ترجمته",
+    translatedText: "الترجمة",
+    pasteBug: "استخدام تفاصيل الخطأ",
+    copyTranslation: "نسخ الترجمة",
+    translated: "تمت الترجمة",
   },
 } as const;
+
+type DevNotesCopy = Record<keyof typeof COPY.en, string>;
 
 const KIND_ICON: Record<DevNoteKind, typeof Braces> = {
   code: Braces,
@@ -103,10 +144,14 @@ function CodeBlock({ note }: { note: DevNote }) {
   };
 
   const handleDownload = () => {
-    const ext = note.language === "ts" || note.language === "tsx" ? note.language
-      : note.language === "python" ? "py"
-      : note.language === "bash" ? "sh"
-      : note.language;
+    const ext =
+      note.language === "ts" || note.language === "tsx"
+        ? note.language
+        : note.language === "python"
+          ? "py"
+          : note.language === "bash"
+            ? "sh"
+            : note.language;
     const blob = new Blob([note.content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -131,7 +176,11 @@ function CodeBlock({ note }: { note: DevNote }) {
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
             onClick={handleCopyRaw}
           >
-            {copiedRaw ? <CheckCheck className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+            {copiedRaw ? (
+              <CheckCheck className="h-3 w-3 text-success" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
             {copiedRaw ? "copied" : "copy"}
           </button>
           {/* Copy as Markdown block */}
@@ -141,7 +190,11 @@ function CodeBlock({ note }: { note: DevNote }) {
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
             onClick={handleCopyBlock}
           >
-            {copiedBlock ? <CheckCheck className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+            {copiedBlock ? (
+              <CheckCheck className="h-3 w-3 text-success" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
             {copiedBlock ? "copied" : "block"}
           </button>
           {/* Download as file */}
@@ -181,7 +234,6 @@ function CodeBlock({ note }: { note: DevNote }) {
   );
 }
 
-
 const MIND_TONES = [
   "bg-primary text-primary-foreground border-primary",
   "bg-primary/15 text-primary border-primary/40",
@@ -197,10 +249,7 @@ function MindBranch({ nodes, depth }: { nodes: MindNode[]; depth: number }) {
       {nodes.map((node, index) => (
         <li key={`${depth}-${index}-${node.label}`} className="relative flex items-center gap-4">
           {/* horizontal connector back to the parent node */}
-          <span
-            aria-hidden="true"
-            className="absolute -start-4 top-1/2 h-px w-4 bg-border"
-          />
+          <span aria-hidden="true" className="absolute -start-4 top-1/2 h-px w-4 bg-border" />
           <span
             className={`inline-flex shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-sm font-medium shadow-sm ${tone}`}
           >
@@ -244,6 +293,158 @@ const EXAMPLES: Record<DevNoteKind, string> = {
   checklist: `[x] Reproduce the bug locally\n[x] Find the failing request\n[ ] Write a regression test\n[ ] Fix the query filter\n[ ] Ask the tester to retest`,
   mindmap: `Login fails on refresh\n  Frontend\n    Session read too early\n    Missing loading state\n  Backend\n    Token expiry 15m\n    Refresh endpoint 401\n  Fix plan\n    Await session before render\n    Retry refresh once`,
 };
+
+function hasArabicText(value: string) {
+  return /[\u0600-\u06FF]/.test(value);
+}
+
+function splitForFreeTranslation(text: string) {
+  const chunks: string[] = [];
+  for (const block of text.split(/(\n+)/)) {
+    if (!block || /^\n+$/.test(block)) {
+      chunks.push(block);
+      continue;
+    }
+    for (let index = 0; index < block.length; index += 450) {
+      chunks.push(block.slice(index, index + 450));
+    }
+  }
+  return chunks;
+}
+
+type MyMemoryResponse = {
+  responseData?: { translatedText?: string };
+  responseStatus?: number;
+  responseDetails?: string;
+};
+
+async function translateWithMyMemory(text: string, targetLanguage: "en" | "ar") {
+  const sourceLanguage = hasArabicText(text) ? "ar" : "en";
+  if (sourceLanguage === targetLanguage) return text;
+
+  const translated = await Promise.all(
+    splitForFreeTranslation(text).map(async (chunk) => {
+      if (!chunk.trim() || /^\n+$/.test(chunk)) return chunk;
+      const params = new URLSearchParams({
+        q: chunk,
+        langpair: `${sourceLanguage}|${targetLanguage}`,
+      });
+      const response = await fetch(`https://api.mymemory.translated.net/get?${params}`);
+      if (!response.ok) throw new Error(`Translation failed (${response.status}).`);
+      const data = (await response.json()) as MyMemoryResponse;
+      if (data.responseStatus && data.responseStatus >= 400) {
+        throw new Error(data.responseDetails || "Translation service rejected the request.");
+      }
+      return data.responseData?.translatedText ?? chunk;
+    }),
+  );
+
+  return translated.join("");
+}
+
+function TranslationPanel({ copy, bugText }: { copy: DevNotesCopy; bugText: string | undefined }) {
+  const [sourceText, setSourceText] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState<"en" | "ar">("en");
+  const [translatedText, setTranslatedText] = useState("");
+  const sourceDir = hasArabicText(sourceText) ? "rtl" : "ltr";
+  const targetDir = rtlDetect.getLangDir(targetLanguage);
+
+  const translate = useMutation({
+    mutationFn: () => translateWithMyMemory(sourceText.trim(), targetLanguage),
+    onSuccess: (data) => {
+      setTranslatedText(data);
+      toast.success(copy.translated);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const fillBugText = () => {
+    if (!bugText) return;
+    setSourceText(bugText);
+    setTargetLanguage(hasArabicText(bugText) ? "en" : "ar");
+  };
+
+  const copyResult = async () => {
+    await navigator.clipboard.writeText(translatedText);
+    toast.success(copy.copyTranslation);
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <Languages className="h-4 w-4 text-primary" aria-hidden="true" />
+            {copy.translatorTitle}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{copy.translatorHint}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {bugText && (
+            <Button variant="outline" size="sm" onClick={fillBugText}>
+              {copy.pasteBug}
+            </Button>
+          )}
+          <Select
+            value={targetLanguage}
+            onValueChange={(value) => setTargetLanguage(value as "en" | "ar")}
+          >
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue aria-label={copy.translateTo} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">{copy.toEnglish}</SelectItem>
+              <SelectItem value="ar">{copy.toArabic}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            disabled={!sourceText.trim() || translate.isPending}
+            onClick={() => translate.mutate()}
+          >
+            {translate.isPending ? (
+              <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Languages className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            {translate.isPending ? copy.translating : copy.translate}
+          </Button>
+        </div>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">{copy.sourceText}</label>
+          <Textarea
+            rows={7}
+            dir={sourceDir}
+            value={sourceText}
+            onChange={(event) => {
+              const next = event.target.value;
+              setSourceText(next);
+              if (next.trim()) setTargetLanguage(hasArabicText(next) ? "en" : "ar");
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-xs font-medium">{copy.translatedText}</label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              disabled={!translatedText}
+              onClick={() => void copyResult()}
+            >
+              <Copy className="me-1 h-3.5 w-3.5" aria-hidden="true" />
+              {copy.copyTranslation}
+            </Button>
+          </div>
+          <Textarea readOnly rows={7} dir={targetDir} value={translatedText} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ChecklistBlock({
   note,
@@ -295,11 +496,13 @@ export function BugDevNotes({
   currentUserId,
   canWrite,
   profileMap,
+  bugText,
 }: {
   bugId: number;
   currentUserId: string | null;
   canWrite: boolean;
   profileMap: ProfileMap;
+  bugText?: string;
 }) {
   const { language } = useI18n();
   const copy = COPY[language === "ar" ? "ar" : "en"];
@@ -317,8 +520,7 @@ export function BugDevNotes({
     queryFn: () => fetchDevNotes(bugId),
   });
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["bug-dev-notes", bugId] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["bug-dev-notes", bugId] });
 
   const create = useMutation({
     mutationFn: () => {
@@ -372,6 +574,14 @@ export function BugDevNotes({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
+        {!canWrite && (
+          <p className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            {copy.readOnly}
+          </p>
+        )}
+
+        <TranslationPanel copy={copy} bugText={bugText} />
+
         {open && canWrite && (
           <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <div className="grid gap-3 sm:grid-cols-3">
@@ -418,9 +628,7 @@ export function BugDevNotes({
                 <Input
                   className="h-9"
                   value={draft.title}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, title: event.target.value }))
-                  }
+                  onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
                 />
               </div>
             </div>
@@ -430,9 +638,7 @@ export function BugDevNotes({
                 rows={draft.kind === "code" ? 8 : 6}
                 className={draft.kind === "code" ? "font-mono text-[12.5px]" : undefined}
                 value={draft.content}
-                onChange={(event) =>
-                  setDraft((prev) => ({ ...prev, content: event.target.value }))
-                }
+                onChange={(event) => setDraft((prev) => ({ ...prev, content: event.target.value }))}
               />
               <p className="text-xs text-muted-foreground">{hint}</p>
             </div>
@@ -441,9 +647,7 @@ export function BugDevNotes({
                 variant="outline"
                 size="sm"
                 className="me-auto"
-                onClick={() =>
-                  setDraft((prev) => ({ ...prev, content: EXAMPLES[prev.kind] }))
-                }
+                onClick={() => setDraft((prev) => ({ ...prev, content: EXAMPLES[prev.kind] }))}
               >
                 {copy.example}
               </Button>
@@ -470,6 +674,7 @@ export function BugDevNotes({
         {notes.map((note) => {
           const Icon = KIND_ICON[note.kind];
           const mine = note.author_id === currentUserId;
+          const canModifyNote = canWrite && mine;
           return (
             <article key={note.id} className="space-y-2 rounded-lg border border-border/60 p-3">
               <header className="flex flex-wrap items-center justify-between gap-2">
@@ -488,7 +693,7 @@ export function BugDevNotes({
                   <span className="text-xs text-muted-foreground">
                     {copy.by} {nameFor(profileMap, note.author_id)}
                   </span>
-                  {mine && (
+                  {canModifyNote && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -506,7 +711,7 @@ export function BugDevNotes({
               {note.kind === "checklist" && (
                 <ChecklistBlock
                   note={note}
-                  canEdit={mine}
+                  canEdit={canModifyNote}
                   onChange={(content) => patch.mutate({ id: note.id, content })}
                 />
               )}

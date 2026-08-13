@@ -99,44 +99,71 @@ export function BugAiPrompt({ bug }: { bug: Bug }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  /**
-   * Structured chain-of-thought engineering prompt.
-   * Gives the AI:
-   *   1. Role context   — senior software engineer
-   *   2. Full bug report — all non-empty fields
-   *   3. Explicit task list with output format
-   *   4. Guard rails   — asks for actionable, code-level answers
-   */
-  const promptText = `You are a senior software engineer performing a structured root-cause analysis.
+  const promptText = `You are a senior software engineer helping a developer fix a production bug.
 
 ## Bug Report
 ${bugToPlainText(bug)}
 
-## Your Task (Chain-of-Thought)
-Work through each step carefully before writing the next:
+## Required Output
+Respond in clear technical English using exactly these sections:
 
-**Step 1 — Understand the symptoms**
-Summarise in 2–3 sentences what the reporter observed and what was expected.
+### 1. Bug Summary
+- What is broken:
+- Expected behaviour:
+- Actual behaviour:
+- Impact:
 
-**Step 2 — Identify the most likely root causes (top 3)**
-For each candidate:
-- State the hypothesis
-- Explain why the observed behaviour matches it
-- Assign a confidence level: High / Medium / Low
+### 2. Reproduction Checklist
+Use a Markdown checklist that a developer can paste into the Developer workspace.
 
-**Step 3 — Propose a concrete fix plan**
-For the highest-confidence root cause:
-- Describe the code change(s) needed (file / function / logic)
-- Provide a short code snippet if applicable
-- List any edge-cases the fix must handle
+### 3. Root-Cause Candidates
+List the top 3 hypotheses. For each one include:
+- Evidence from the report
+- What to inspect in the codebase
+- Confidence: High / Medium / Low
 
-**Step 4 — Suggest a regression test**
-Describe one automated test that would catch this bug if it regressed.
+### 4. Fix Plan
+Give a concrete implementation plan with likely files, functions, state, API calls, validation, and edge cases. Do not invent exact filenames unless they are present in the report.
 
-**Step 5 — Quick wins / follow-ups**
-Any related improvements or warnings the reviewer should know about.
+### 5. Regression Tests
+List automated tests and one manual retest path.
 
-Respond in clear, technical English. Be concise but specific. Avoid generic advice.`;
+### 6. Developer Workspace Blocks
+Return copy-ready blocks for the Developer workspace:
+
+\`\`\`checklist
+[ ] Reproduce:
+[ ] Inspect:
+[ ] Fix:
+[ ] Test:
+[ ] Retest with reporter:
+\`\`\`
+
+\`\`\`mindmap
+Root cause
+  Frontend
+  Backend
+  Data/API
+  Permissions
+Fix plan
+  Code change
+  Validation
+  Regression test
+\`\`\`
+
+\`\`\`text
+Developer note:
+- Finding:
+- Decision:
+- Risk:
+- Follow-up:
+\`\`\`
+
+Rules:
+- Be concise but specific.
+- Preserve bug IDs, URLs, field names, and technical terms.
+- Avoid generic advice.
+- Do not reveal hidden reasoning; provide only the final analysis and actions.`;
 
   const analyse = useMutation({
     mutationFn: () => runPrompt({ data: { prompt: promptText } }),
