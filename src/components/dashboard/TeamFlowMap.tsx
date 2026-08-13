@@ -272,7 +272,8 @@ export function TeamFlowMap() {
                       textAnchor={isTester ? "end" : "start"}
                       className="fill-foreground font-mono text-[12px] font-semibold"
                     >
-                      {node.unknown ? copy.unknownMember : node.name}
+                      {shortLabel(node.unknown ? copy.unknownMember : node.name)}
+
                     </text>
                     <text
                       x={isTester ? x - r - 14 : x + r + 14}
