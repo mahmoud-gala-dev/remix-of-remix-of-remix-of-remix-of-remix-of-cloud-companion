@@ -48,11 +48,12 @@ export function BugKanbanBoard({
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const drop = (status: string) => {
+  const drop = (status: string, transferred: string | null) => {
     setOverStatus(null);
-    const id = draggingId;
+    const parsed = transferred ? Number(transferred) : Number.NaN;
+    const id = Number.isFinite(parsed) ? parsed : draggingId;
     setDraggingId(null);
-    if (id === null) return;
+    if (id === null || id === undefined || Number.isNaN(id)) return;
     const bug = rows.find((row) => row.id === id);
     if (!bug || bug.status === status) return;
     if (!canChangeBugStatus(bug, user)) {
@@ -61,6 +62,7 @@ export function BugKanbanBoard({
     }
     move.mutate({ id, status });
   };
+
 
   if (isLoading) {
     return (
@@ -90,10 +92,16 @@ export function BugKanbanBoard({
             aria-label={`${status} column`}
             onDragOver={(event) => {
               event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
               setOverStatus(status);
             }}
+            onDragEnter={(event) => event.preventDefault()}
             onDragLeave={() => setOverStatus((current) => (current === status ? null : current))}
-            onDrop={() => drop(status)}
+            onDrop={(event) => {
+              event.preventDefault();
+              drop(status, event.dataTransfer.getData("text/plain") || null);
+            }}
+
             className={cn(
               "flex min-h-[220px] flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5 transition-colors",
               overStatus === status && "border-primary/60 bg-primary/5",
@@ -119,7 +127,12 @@ export function BugKanbanBoard({
                   <article
                     key={bug.id}
                     draggable={editable}
-                    onDragStart={() => setDraggingId(bug.id)}
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData("text/plain", String(bug.id));
+                      event.dataTransfer.effectAllowed = "move";
+                      setDraggingId(bug.id);
+                    }}
+
                     onDragEnd={() => setDraggingId(null)}
                     className={cn(
                       "rounded-lg border border-border/60 bg-card p-2.5 shadow-sm transition-opacity",

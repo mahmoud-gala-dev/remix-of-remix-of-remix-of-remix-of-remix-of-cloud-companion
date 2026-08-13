@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Bug, MessageSquare, MessagesSquare, RefreshCw } from "lucide-react";
@@ -6,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
-import { fetchActivity, timeAgo, type ActivityItem } from "@/lib/activity";
+import { fetchActivityPage, timeAgo, type ActivityItem } from "@/lib/activity";
 import { fetchProfiles } from "@/lib/api";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => ({
@@ -39,23 +41,31 @@ const kindMeta: Record<ActivityItem["kind"], { labelKey: TranslationKey; icon: t
   chat: { labelKey: "activity.kind.chat", icon: MessagesSquare },
 };
 
+const PAGE_SIZE = 20;
+
 function ActivityPage() {
   const { t } = useI18n();
+  const [page, setPage] = useState(1);
   const {
-    data: items,
+    data,
     isLoading,
     isFetching,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["activity-feed"],
-    queryFn: () => fetchActivity(60),
+    queryKey: ["activity-feed", page],
+    queryFn: () => fetchActivityPage(page, PAGE_SIZE),
     refetchInterval: 60_000,
+    placeholderData: (previous) => previous,
   });
+
+  const items = data?.items ?? [];
+  const hasMore = data?.hasMore ?? false;
 
   const { data: profiles } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
   const nameFor = (userId: string | null) =>
     (userId ? profiles?.find((p) => p.id === userId)?.username : null) ?? t("common.someone");
+
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -97,7 +107,7 @@ function ActivityPage() {
             </p>
           )}
 
-          {(items ?? []).map((item) => {
+          {items.map((item: ActivityItem) => {
             const meta = kindMeta[item.kind];
             const Icon = meta.icon;
             return (
@@ -140,7 +150,34 @@ function ActivityPage() {
               </article>
             );
           })}
+
+          {(page > 1 || hasMore) && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {t("bugs.page", { page, pages: hasMore ? page + 1 : page })}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || isFetching}
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                >
+                  {t("common.previous")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hasMore || isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  {t("common.next")}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
+
       </Card>
     </div>
   );

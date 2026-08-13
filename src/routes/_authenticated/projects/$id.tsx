@@ -1,9 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ClipboardList, FolderKanban, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  FileDown,
+  FolderKanban,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { downloadBugImportTemplate } from "@/lib/bug-excel";
+import { importBugsFromExcel } from "@/lib/bug-excel-import";
+
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -139,6 +150,22 @@ function ProjectDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => importBugsFromExcel({ file, projectId }),
+    onSuccess: (result) => {
+      toast.success(
+        `Imported ${result.imported} bug(s) · ${result.duplicates} duplicate(s) · ${result.failures.length} failed`,
+      );
+
+      queryClient.invalidateQueries({ queryKey: ["bugs"] });
+      queryClient.invalidateQueries({ queryKey: ["project-bugs", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const [values, setValues] = useState({ name: "", key: "", description: "", status: "Active" });
 
   const canManage = user && project && (user.role === "admin" || user.id === project.created_by);
@@ -318,9 +345,40 @@ function ProjectDetailPage() {
       <ProjectMembers projectId={projectId} profiles={profiles ?? []} canManage={!!canManage} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">Bugs ({bugs?.length ?? 0})</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadBugImportTemplate()}
+            >
+              <FileDown className="me-2 h-4 w-4" aria-hidden="true" />
+              Template
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) importMutation.mutate(file);
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={importMutation.isPending}
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload className="me-2 h-4 w-4" aria-hidden="true" />
+              {importMutation.isPending ? "Importing…" : "Import Excel"}
+            </Button>
+          </div>
         </CardHeader>
+
         <CardContent>
           {bugsLoading ? (
             <Skeleton className="h-40 w-full" />

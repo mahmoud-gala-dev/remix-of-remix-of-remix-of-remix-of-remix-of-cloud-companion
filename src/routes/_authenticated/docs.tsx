@@ -1,12 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowRight, BookOpen, Search } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowRight, BookOpen, LifeBuoy, Search } from "lucide-react";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ModuleGlyph } from "@/components/docs/ModuleGlyph";
 import { DOC_GROUPS, DOC_MODULES, type DocModule } from "@/lib/docs-modules";
+import { requestModuleHelp } from "@/lib/module-help";
 import { useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/_authenticated/docs")({
   head: () => ({
@@ -39,6 +53,14 @@ const COPY = {
     open: "Open module",
     empty: "No module matches your search.",
     count: "modules",
+    help: "Ask for help",
+    helpTitle: "Request help with this module",
+    helpDetail: "Your request is sent to the admins and supervisors as a notification.",
+    helpPlaceholder: "What do you need help with?",
+    send: "Send request",
+    cancel: "Cancel",
+    sent: "Help request sent",
+    noAdmins: "No admin is available to receive the request.",
   },
   ar: {
     kicker: "توثيق المنتج",
@@ -49,10 +71,26 @@ const COPY = {
     open: "افتح الموديول",
     empty: "لا يوجد موديول مطابق للبحث.",
     count: "موديول",
+    help: "اطلب مساعدة",
+    helpTitle: "طلب مساعدة في هذا الموديول",
+    helpDetail: "يُرسل الطلب كإشعار إلى المديرين والمشرفين.",
+    helpPlaceholder: "ما الذي تحتاج مساعدة فيه؟",
+    send: "إرسال الطلب",
+    cancel: "إلغاء",
+    sent: "تم إرسال طلب المساعدة",
+    noAdmins: "لا يوجد مدير متاح لاستلام الطلب.",
   },
 } as const;
 
-function DocCard({ mod, lang }: { mod: DocModule; lang: "en" | "ar" }) {
+function DocCard({
+  mod,
+  lang,
+  onAskHelp,
+}: {
+  mod: DocModule;
+  lang: "en" | "ar";
+  onAskHelp: (mod: DocModule) => void;
+}) {
   const copy = COPY[lang];
   const body = mod[lang];
   return (
@@ -75,21 +113,47 @@ function DocCard({ mod, lang }: { mod: DocModule; lang: "en" | "ar" }) {
           </li>
         ))}
       </ul>
-      <Link
-        to={mod.to as "/dashboard"}
-        className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-      >
-        {copy.open} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
-      </Link>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+        <Link
+          to={mod.to as "/dashboard"}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          {copy.open} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+        </Link>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => onAskHelp(mod)}>
+          <LifeBuoy className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
+          {copy.help}
+        </Button>
+      </div>
     </article>
   );
 }
+
 
 function DocsPage() {
   const { language } = useI18n();
   const lang: "en" | "ar" = language === "ar" ? "ar" : "en";
   const copy = COPY[lang];
   const [query, setQuery] = useState("");
+  const [helpModule, setHelpModule] = useState<DocModule | null>(null);
+  const [helpMessage, setHelpMessage] = useState("");
+
+  const sendHelp = useMutation({
+    mutationFn: async () => {
+      if (!helpModule) return 0;
+      return requestModuleHelp({
+        module: helpModule[lang].title,
+        message: helpMessage.trim(),
+      });
+    },
+    onSuccess: (count) => {
+      toast[count > 0 ? "success" : "warning"](count > 0 ? copy.sent : copy.noAdmins);
+      setHelpModule(null);
+      setHelpMessage("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -142,15 +206,52 @@ function DocsPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((mod) => (
-                  <DocCard key={mod.id} mod={mod} lang={lang} />
+                  <DocCard key={mod.id} mod={mod} lang={lang} onAskHelp={setHelpModule} />
                 ))}
               </div>
             </section>
           );
         })
       )}
+
+      <Dialog
+        open={helpModule !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHelpModule(null);
+            setHelpMessage("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{copy.helpTitle}</DialogTitle>
+            <DialogDescription>
+              {helpModule ? `${helpModule[lang].title} — ${copy.helpDetail}` : copy.helpDetail}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={helpMessage}
+            onChange={(event) => setHelpMessage(event.target.value)}
+            placeholder={copy.helpPlaceholder}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHelpModule(null)}>
+              {copy.cancel}
+            </Button>
+            <Button
+              onClick={() => sendHelp.mutate()}
+              disabled={sendHelp.isPending || helpMessage.trim().length === 0}
+            >
+              {copy.send}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
+
 
 export default DocsPage;

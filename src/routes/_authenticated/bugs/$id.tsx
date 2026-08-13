@@ -35,6 +35,8 @@ import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { BugInfoPanel } from "@/components/bugs/BugInfoPanel";
 import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
+import { BugDevNotes } from "@/components/bugs/BugDevNotes";
+
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
 import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
@@ -307,8 +309,15 @@ function BugDetailPage() {
             canEdit={canEdit}
             canEditStatus={canChangeStatus}
           />
+          <BugDevNotes
+            bugId={bug.id}
+            currentUserId={user?.id ?? null}
+            canWrite={canEdit || canTrackResolutionTime}
+            profileMap={profileMap}
+          />
           <BugComments bugId={bug.id} currentUserId={user?.id ?? null} profileMap={profileMap} />
           <BugAttachments bugId={bug.id} />
+
         </div>
         <div className="space-y-6">
           <BugResolutionTimer

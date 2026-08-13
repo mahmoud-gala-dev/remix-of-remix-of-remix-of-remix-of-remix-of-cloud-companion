@@ -8,6 +8,8 @@ import {
   Download,
   FileUp,
   KanbanSquare,
+  LayoutGrid,
+
   List,
   Plus,
   FileSpreadsheet,
@@ -45,6 +47,8 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
+import { BugCardGrid } from "@/components/bugs/BugCardGrid";
+
 import { BugStatsDashboard } from "@/components/bugs/BugStatsDashboard";
 import {
   BugFilters,
@@ -72,6 +76,8 @@ import {
   parseBugsSearch,
   searchToFilterState,
   type BugsSearch,
+  type BugsView,
+
 } from "@/lib/bug-filter-url";
 
 export const Route = createFileRoute("/_authenticated/bugs/")({
@@ -154,7 +160,7 @@ function BugsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pushSearch = useCallback(
-    (next: BugFilterState, extra: { page: number; view: "table" | "board" }) => {
+    (next: BugFilterState, extra: { page: number; view: BugsView }) => {
       navigate({
         search: filterStateToSearch(next, extra) as never,
         replace: true,
@@ -180,7 +186,7 @@ function BugsPage() {
   );
 
   const setView = useCallback(
-    (nextView: "table" | "board") => pushSearch(filterState, { page, view: nextView }),
+    (nextView: BugsView) => pushSearch(filterState, { page, view: nextView }),
     [filterState, page, pushSearch],
   );
 
@@ -543,7 +549,18 @@ function BugsPage() {
               <KanbanSquare className="me-1.5 h-4 w-4" aria-hidden="true" />
               {t("bugs.view.board")}
             </Button>
+            <Button
+              variant={view === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+              className="h-8"
+            >
+              <LayoutGrid className="me-1.5 h-4 w-4" aria-hidden="true" />
+              Cards
+            </Button>
           </div>
+
           {/* Stats toggle */}
           <Button
             variant="ghost"
@@ -703,7 +720,16 @@ function BugsPage() {
 
         {view === "board" ? (
           <BugKanbanBoard rows={rows} isLoading={isLoading} user={user} profileMap={profileMap} />
+        ) : view === "cards" ? (
+          <BugCardGrid
+            rows={rows}
+            isLoading={isLoading}
+            profileMap={profileMap}
+            projectMap={projectMap}
+            emptyMessage={hasActiveFilters ? t("bugs.empty.filtered") : t("bugs.empty.none")}
+          />
         ) : (
+
           <BugTable
             rows={rows}
             isLoading={isLoading}

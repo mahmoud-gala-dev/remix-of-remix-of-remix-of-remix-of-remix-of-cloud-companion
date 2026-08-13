@@ -144,6 +144,50 @@ export type Database = {
           },
         ]
       }
+      bug_dev_notes: {
+        Row: {
+          author_id: string
+          bug_id: number
+          content: string
+          created_at: string
+          id: number
+          kind: string
+          language: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          bug_id: number
+          content?: string
+          created_at?: string
+          id?: number
+          kind?: string
+          language?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          bug_id?: number
+          content?: string
+          created_at?: string
+          id?: number
+          kind?: string
+          language?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bug_dev_notes_bug_id_fkey"
+            columns: ["bug_id"]
+            isOneToOne: false
+            referencedRelation: "bugs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bug_history: {
         Row: {
           bug_id: number
@@ -944,6 +988,10 @@ export type Database = {
       }
       is_account_active: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      request_module_help: {
+        Args: { _message: string; _module: string }
+        Returns: number
+      }
       run_sla_breach_scan: { Args: never; Returns: Json }
       sla_breach_scan: { Args: never; Returns: Json }
       sla_target_hours: { Args: { _priority: string }; Returns: number }

@@ -4,6 +4,8 @@ import { EMPTY_BUG_FILTERS, type BugFilterState } from "@/components/bugs/BugFil
  * Every field is optional so `<Link to="/bugs">` stays valid without repeating
  * the whole filter object; `parseBugsSearch` fills defaults when reading.
  */
+export type BugsView = "table" | "board" | "cards";
+
 export type BugsSearch = {
   q?: string;
   module?: string;
@@ -13,10 +15,11 @@ export type BugsSearch = {
   project?: string;
   assignee?: string;
   page?: number;
-  view?: "table" | "board";
+  view?: BugsView;
 };
 
 export type ResolvedBugsSearch = Required<BugsSearch>;
+
 
 function str(value: unknown, fallback: string) {
   return typeof value === "string" && value.length > 0 ? value : fallback;
@@ -34,9 +37,11 @@ export function parseBugsSearch(input: Record<string, unknown>): ResolvedBugsSea
     project: str(input["project"], "All"),
     assignee: str(input["assignee"], "All"),
     page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
-    view: input["view"] === "board" ? "board" : "table",
+    view:
+      input["view"] === "board" ? "board" : input["view"] === "cards" ? "cards" : "table",
   };
 }
+
 
 export function searchToFilterState(search: ResolvedBugsSearch): BugFilterState {
   return {
@@ -54,7 +59,7 @@ export function searchToFilterState(search: ResolvedBugsSearch): BugFilterState 
 /** Only non-default values end up in the URL, so shared links stay readable. */
 export function filterStateToSearch(
   state: BugFilterState,
-  extra: { page: number; view: "table" | "board" },
+  extra: { page: number; view: BugsView },
 ): Partial<BugsSearch> {
   const next: Partial<BugsSearch> = {};
   if (state.search.trim()) next.q = state.search;
@@ -65,6 +70,7 @@ export function filterStateToSearch(
   if (state.project !== "All") next.project = state.project;
   if (state.assignee !== "All") next.assignee = state.assignee;
   if (extra.page > 1) next.page = extra.page;
-  if (extra.view === "board") next.view = "board";
+  if (extra.view !== "table") next.view = extra.view;
+
   return next;
 }
