@@ -150,6 +150,19 @@ function ProjectDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => importBugsFromExcel({ file, projectId }),
+    onSuccess: (result) => {
+      toast.success(`Imported ${result.inserted} bug(s), skipped ${result.skipped}`);
+      queryClient.invalidateQueries({ queryKey: ["bugs"] });
+      queryClient.invalidateQueries({ queryKey: ["project-bugs", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const [values, setValues] = useState({ name: "", key: "", description: "", status: "Active" });
 
   const canManage = user && project && (user.role === "admin" || user.id === project.created_by);
