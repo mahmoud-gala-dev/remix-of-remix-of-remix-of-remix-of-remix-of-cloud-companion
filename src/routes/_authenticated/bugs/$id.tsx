@@ -36,6 +36,7 @@ import { BugInfoPanel } from "@/components/bugs/BugInfoPanel";
 import { BugAttachments } from "@/components/bugs/BugAttachments";
 import { BugComments } from "@/components/bugs/BugComments";
 import { BugDevNotes } from "@/components/bugs/BugDevNotes";
+import { BugAiPrompt } from "@/components/bugs/BugAiPrompt";
 
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
