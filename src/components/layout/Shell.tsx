@@ -102,11 +102,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     ...(user?.role === "developer" || user?.role === "admin"
       ? ([{ to: "/pomodoro", key: "nav.pomodoro", icon: Timer }] as const)
       : []),
+    // Documentation is available to every signed-in user.
+    { to: "/docs", key: "nav.docs", icon: BookOpen },
     ...(user?.role === "admin"
-      ? ([
-          { to: "/docs", key: "nav.docs", icon: BookOpen },
-          { to: "/users", key: "nav.users", icon: Users },
-        ] as const)
+      ? ([{ to: "/users", key: "nav.users", icon: Users }] as const)
       : []),
     { to: "/settings", key: "nav.settings", icon: Settings },
 
