@@ -64,25 +64,23 @@ describe("role permissions", () => {
     const assignedDev = { id: "developer-1", role: "developer" };
     const otherDev = { id: "developer-2", role: "developer" };
     const admin = { id: "admin-1", role: "admin" };
-    const reporter = { id: "tester-1", role: "tester" };
-    const otherTester = { id: "tester-2", role: "tester" };
+    const supervisor = { id: "supervisor-1", role: "supervisor" };
+    const tester = { id: "tester-1", role: "tester" };
+    const monitor = { id: "monitor-1", role: "monitor" };
+    const auditor = { id: "auditor-1", role: "auditor" };
 
-    // Staff can assign both assigned and unassigned bugs
+    // Staff, Testers, and Monitors/Auditors can assign bugs
     expect(canAssignBug(assignedBug, admin)).toBe(true);
     expect(canAssignBug(unassignedBug, admin)).toBe(true);
+    expect(canAssignBug(assignedBug, supervisor)).toBe(true);
+    expect(canAssignBug(assignedBug, tester)).toBe(true);
+    expect(canAssignBug(unassignedBug, tester)).toBe(true);
+    expect(canAssignBug(assignedBug, monitor)).toBe(true);
+    expect(canAssignBug(assignedBug, auditor)).toBe(true);
 
-    // Reporter can assign their reported bugs
-    expect(canAssignBug(assignedBug, reporter)).toBe(true);
-    expect(canAssignBug(unassignedBug, reporter)).toBe(true);
-    expect(canAssignBug(assignedBug, otherTester)).toBe(false);
-
-    // Assigned developer can reassign their own bug
-    expect(canAssignBug(assignedBug, assignedDev)).toBe(true);
-
-    // Any developer can assign an unassigned bug
-    expect(canAssignBug(unassignedBug, otherDev)).toBe(true);
-
-    // Non-assigned developer cannot reassign someone else's bug
+    // Developers can NEVER assign or reassign bugs
+    expect(canAssignBug(assignedBug, assignedDev)).toBe(false);
+    expect(canAssignBug(unassignedBug, otherDev)).toBe(false);
     expect(canAssignBug(assignedBug, otherDev)).toBe(false);
   });
 });

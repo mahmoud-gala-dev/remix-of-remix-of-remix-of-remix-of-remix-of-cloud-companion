@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   BarChart3,
@@ -46,8 +47,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+
+type QuickProject = {
+  id: number;
+  name: string;
+  key: string;
+  status: string | null;
+};
 
 export function DesktopNavigationContextMenu({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -55,6 +64,19 @@ export function DesktopNavigationContextMenu({ children }: { children: React.Rea
   const { language, setLanguage, direction } = useI18n();
 
   const isArabic = language === "ar";
+
+  const { data: projects = [] } = useQuery<QuickProject[]>({
+    queryKey: ["projects-quick-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, key, status")
+        .order("name", { ascending: true })
+        .limit(12);
+      if (error) return [];
+      return (data ?? []) as QuickProject[];
+    },
+  });
 
   const handleCopyLink = () => {
     void navigator.clipboard.writeText(window.location.href);
@@ -159,20 +181,48 @@ export function DesktopNavigationContextMenu({ children }: { children: React.Rea
           </ContextMenuSubContent>
         </ContextMenuSub>
 
-        {/* ── Submenu 3: Projects & Team ──────────────────────────────── */}
+        {/* ── Submenu 3: Projects & Team (With Added Projects) ──────────── */}
         <ContextMenuSub>
           <ContextMenuSubTrigger className="gap-2.5 rounded-lg py-2 cursor-pointer">
             <FolderKanban className="h-4 w-4 text-info" />
             <span>{isArabic ? "المشاريع والتعاون" : "Projects & Team"}</span>
           </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="w-56 rounded-xl p-1.5 shadow-2xl bg-popover/98 border-border/80">
+          <ContextMenuSubContent className="w-64 max-h-[85vh] overflow-y-auto rounded-xl p-1.5 shadow-2xl bg-popover/98 border-border/80">
             <ContextMenuItem
-              className="gap-2.5 rounded-lg py-2 cursor-pointer"
+              className="gap-2.5 rounded-lg py-2 cursor-pointer font-medium"
               onClick={() => navigate({ to: "/projects" })}
             >
-              <FolderKanban className="h-4 w-4 text-muted-foreground" />
-              <span>{isArabic ? "المشاريع" : "Projects"}</span>
+              <FolderKanban className="h-4 w-4 text-primary" />
+              <span>{isArabic ? "جميع المشاريع" : "All Projects"}</span>
             </ContextMenuItem>
+
+            {projects.length > 0 && (
+              <>
+                <ContextMenuSeparator />
+                <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {isArabic ? "المشاريع المضافة" : "Added Projects"}
+                </div>
+                {projects.map((proj) => (
+                  <ContextMenuItem
+                    key={proj.id}
+                    className="gap-2 rounded-lg py-1.5 cursor-pointer justify-between"
+                    onClick={() =>
+                      navigate({ to: "/projects/$id", params: { id: String(proj.id) } })
+                    }
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="truncate text-xs font-medium">{proj.name}</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60">
+                      {proj.key}
+                    </span>
+                  </ContextMenuItem>
+                ))}
+              </>
+            )}
+
+            <ContextMenuSeparator />
             <ContextMenuItem
               className="gap-2.5 rounded-lg py-2 cursor-pointer"
               onClick={() => navigate({ to: "/tasks" })}
@@ -278,13 +328,26 @@ export function DesktopNavigationContextMenu({ children }: { children: React.Rea
 }
 
 /**
- * Clickable Desktop Header Quick Navigation Menu with the same rich submenus
+ * Clickable Desktop Header Quick Navigation Menu with the same rich submenus + Added Projects
  */
 export function DesktopQuickNavDropdown() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, direction } = useI18n();
   const isArabic = language === "ar";
+
+  const { data: projects = [] } = useQuery<QuickProject[]>({
+    queryKey: ["projects-quick-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, key, status")
+        .order("name", { ascending: true })
+        .limit(12);
+      if (error) return [];
+      return (data ?? []) as QuickProject[];
+    },
+  });
 
   return (
     <DropdownMenu dir={direction}>
@@ -386,20 +449,48 @@ export function DesktopQuickNavDropdown() {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* ── Submenu 3: Projects & Collaboration ─────────────────────── */}
+        {/* ── Submenu 3: Projects & Collaboration (With Added Projects) ─ */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="gap-2.5 rounded-lg py-2 cursor-pointer">
             <FolderKanban className="h-4 w-4 text-info" />
             <span>{isArabic ? "المشاريع والتعاون" : "Projects & Team"}</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-56 rounded-xl p-1.5 shadow-2xl bg-popover/98 border-border/80">
+          <DropdownMenuSubContent className="w-64 max-h-[85vh] overflow-y-auto rounded-xl p-1.5 shadow-2xl bg-popover/98 border-border/80">
             <DropdownMenuItem
-              className="gap-2.5 rounded-lg py-2 cursor-pointer"
+              className="gap-2.5 rounded-lg py-2 cursor-pointer font-medium"
               onClick={() => navigate({ to: "/projects" })}
             >
-              <FolderKanban className="h-4 w-4 text-muted-foreground" />
-              <span>{isArabic ? "المشاريع" : "Projects"}</span>
+              <FolderKanban className="h-4 w-4 text-primary" />
+              <span>{isArabic ? "جميع المشاريع" : "All Projects"}</span>
             </DropdownMenuItem>
+
+            {projects.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {isArabic ? "المشاريع المضافة" : "Added Projects"}
+                </div>
+                {projects.map((proj) => (
+                  <DropdownMenuItem
+                    key={proj.id}
+                    className="gap-2 rounded-lg py-1.5 cursor-pointer justify-between"
+                    onClick={() =>
+                      navigate({ to: "/projects/$id", params: { id: String(proj.id) } })
+                    }
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="truncate text-xs font-medium">{proj.name}</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60">
+                      {proj.key}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="gap-2.5 rounded-lg py-2 cursor-pointer"
               onClick={() => navigate({ to: "/tasks" })}

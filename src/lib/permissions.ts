@@ -112,24 +112,19 @@ export function canEditBugDetails(
 }
 
 /**
- * Assignee editing / re-assignment permissions:
- * 1. Staff (admin / supervisor) may assign or reassign any bug.
- * 2. Reporter (tester) may assign or reassign their reported bugs.
- * 3. Developers may assign unassigned bugs or reassign bugs currently assigned to them.
- * 4. Other developers may NOT reassign bugs assigned to another developer.
+ * Assignee editing / assignment permissions:
+ * 1. Admin & Supervisor (Staff) may assign or reassign any bug.
+ * 2. Tester may assign or reassign bugs.
+ * 3. Monitor / Auditor (Observers) may assign or reassign bugs.
+ * 4. Developers (role === "developer") may NEVER assign or reassign bugs.
  */
 export function canAssignBug(
-  bug: Pick<Bug, "reported_by" | "assigned_to">,
-  user: { id?: string | null; role?: string | null } | null | undefined,
+  _bug?: Pick<Bug, "reported_by" | "assigned_to"> | null,
+  user?: { id?: string | null; role?: string | null } | null,
 ): boolean {
   if (!user?.id) return false;
-  if (isStaffRole(user.role)) return true;
-  if (bug.reported_by && bug.reported_by === user.id) return true;
-  if (user.role === "developer") {
-    // Developers can assign unassigned bugs or reassign their own assigned bugs
-    if (!bug.assigned_to || bug.assigned_to === user.id) return true;
-  }
-  return false;
+  if (user.role === "developer") return false;
+  return isStaffRole(user.role) || user.role === "tester" || isMonitorRole(user.role);
 }
 
 /**
