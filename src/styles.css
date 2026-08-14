@@ -225,8 +225,13 @@ aside#lovable-badge {
   display: none !important;
 }
 
-/* Team Flow Map — animated routing between testers and developers. */
+/* Team Flow Map — dynamic animated routing between testers and developers. */
 @keyframes team-flow-dash {
+  to {
+    stroke-dashoffset: -64;
+  }
+}
+@keyframes team-flow-dash-fast {
   to {
     stroke-dashoffset: -64;
   }
@@ -240,26 +245,56 @@ aside#lovable-badge {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.5;
+    opacity: 0.55;
   }
   50% {
-    transform: scale(1.18);
-    opacity: 0.15;
+    transform: scale(1.22);
+    opacity: 0.12;
+  }
+}
+@keyframes team-flow-halo {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0;
   }
 }
 .team-flow-dash {
-  animation: team-flow-dash 1.6s linear infinite;
+  animation: team-flow-dash 1.8s linear infinite;
+}
+.team-flow-tester-stream {
+  animation: team-flow-dash 1.4s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.45));
+}
+.team-flow-resolved-dash {
+  animation: team-flow-dash 1.1s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.65));
+}
+.team-flow-critical-stream {
+  animation: team-flow-dash-fast 0.85s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.75));
 }
 .team-flow-spin {
   animation: team-flow-spin 60s linear infinite;
 }
 .team-flow-pulse {
-  animation: team-flow-pulse 2.4s ease-in-out infinite;
+  animation: team-flow-pulse 2.2s ease-in-out infinite;
+}
+.team-flow-halo {
+  animation: team-flow-halo 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .team-flow-dash,
+  .team-flow-tester-stream,
+  .team-flow-resolved-dash,
+  .team-flow-critical-stream,
   .team-flow-spin,
-  .team-flow-pulse {
+  .team-flow-pulse,
+  .team-flow-halo {
     animation: none;
   }
 }
