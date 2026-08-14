@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Crown, Timer, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -212,10 +212,27 @@ function ResolutionTimesPage() {
                     .map((row) => (
                       <tr
                         key={`${row.bugId}-${row.developerId}`}
-                        className="border-b border-border/40 last:border-0"
+                        className="border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors"
                       >
-                        <td className="py-2 font-mono text-xs">{row.bugCode}</td>
-                        <td className="max-w-[280px] truncate py-2">{row.title}</td>
+                        <td className="py-2 font-mono text-xs">
+                          <Link
+                            to="/bugs/$id"
+                            params={{ id: String(row.bugId) }}
+                            className="font-semibold text-primary hover:underline inline-flex items-center"
+                          >
+                            {row.bugCode}
+                          </Link>
+                        </td>
+                        <td className="max-w-[280px] truncate py-2">
+                          <Link
+                            to="/bugs/$id"
+                            params={{ id: String(row.bugId) }}
+                            className="hover:underline hover:text-primary transition-colors block truncate"
+                            title={row.title}
+                          >
+                            {row.title}
+                          </Link>
+                        </td>
                         <td className="py-2">{row.module}</td>
                         <td className="py-2">{row.developerName}</td>
                         <td className="py-2 text-end font-mono tabular-nums">
