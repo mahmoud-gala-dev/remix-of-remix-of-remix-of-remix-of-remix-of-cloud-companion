@@ -23,12 +23,14 @@ import {
 import { MockDataControls } from "@/components/admin/MockDataControls";
 import { UserIntegrationSettings } from "@/components/settings/UserIntegrationSettings";
 import { DatabaseMigrationPanel } from "@/components/admin/DatabaseMigrationPanel";
+import { DatabaseSqlBackupPanel } from "@/components/admin/DatabaseSqlBackupPanel";
 import { IntegrationSettings } from "@/components/admin/IntegrationSettings";
 import { useUsersManager } from "@/hooks/useUsersManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
 import { friendlyDbError, isSafeHttpUrl } from "@/lib/api";
 import { useUserAvatar } from "@/context/AvatarContext";
+import { useI18n } from "@/lib/i18n";
 
 export const NOTIFICATION_POLLING_KEY = "electropi.notifications.polling";
 
@@ -146,6 +148,8 @@ function SettingsPage() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { language } = useI18n();
+  const isArabic = language === "ar";
   const [polling, setPolling] = useState(true);
   const { addMockUsers, deleteMockUsers, mockUsersCount, allUsers } = useUsersManager();
 
@@ -315,6 +319,21 @@ function SettingsPage() {
         <UserIntegrationSettings />
       </section>
 
+      {/* ── Database SQL Export & Import Panel (Always Visible) ─────── */}
+      <section id="database-backup" className="space-y-4 border-t border-border/60 pt-6">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            {isArabic ? "النسخ الاحتياطي لقاعدة البيانات (SQL)" : "Database SQL Backup & Restore"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isArabic
+              ? "تصدير واستيراد قاعدة البيانات كاملة لجميع المشاريع والأخطاء والمهام والموديولات."
+              : "Export or restore the entire database for all projects, bugs, tasks, and modules."}
+          </p>
+        </div>
+        <DatabaseSqlBackupPanel />
+      </section>
+
       {user?.role === "admin" && (
         <>
           <Card>
@@ -331,7 +350,6 @@ function SettingsPage() {
               <DatabaseMigrationPanel />
             </CardContent>
           </Card>
-
 
           <section className="space-y-4 border-t border-border/60 pt-6">
             <div>
