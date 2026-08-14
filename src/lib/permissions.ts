@@ -94,3 +94,30 @@ export function canEditBug(
 
   return false;
 }
+
+/**
+ * Full bug/task detail editing (Priority, Severity, Assignee, Module, ...).
+ * Developers are explicitly excluded: they may never reassign a bug to another
+ * developer nor rewrite its specification — even when it is assigned to them.
+ * Allowed: staff (admin / supervisor) and the reporter (tester).
+ */
+export function canEditBugDetails(
+  bug: Pick<Bug, "reported_by" | "assigned_to">,
+  user: { id?: string | null; role?: string | null } | null | undefined,
+): boolean {
+  if (!user?.id) return false;
+  if (isStaffRole(user.role)) return true;
+  if (user.role === "developer") return false;
+  return Boolean(bug.reported_by && bug.reported_by === user.id);
+}
+
+/**
+ * Lightweight collaboration fields (Tags, Notes) — open to staff, the reporter
+ * and the assigned developer.
+ */
+export function canEditBugTagsNotes(
+  bug: Pick<Bug, "reported_by" | "assigned_to">,
+  user: { id?: string | null; role?: string | null } | null | undefined,
+): boolean {
+  return canEditBug(bug, user);
+}
