@@ -46,6 +46,7 @@ import { BugAiPrompt, bugToPlainText } from "@/components/bugs/BugAiPrompt";
 import { BugRelated } from "@/components/bugs/BugRelated";
 import { BugHistoryTimeline } from "@/components/bugs/BugHistoryTimeline";
 import { BugDevLocalNotes } from "@/components/bugs/BugDevLocalNotes";
+import { BugDevTranslator } from "@/components/bugs/BugDevTranslator";
 import { fetchBugIdOrder, readBugNavFilters } from "@/lib/bug-nav";
 import { BugAssistance } from "@/components/bugs/BugAssistance";
 import { BugStatsStrip } from "@/components/bugs/BugStatsStrip";
@@ -447,6 +448,7 @@ function BugDetailPage() {
           />
           <BugHistoryTimeline bugId={bug.id} profileMap={profileMap} />
           <BugDevLocalNotes bugId={bug.id} />
+          <BugDevTranslator bugId={bug.id} />
         </div>
       </div>
 

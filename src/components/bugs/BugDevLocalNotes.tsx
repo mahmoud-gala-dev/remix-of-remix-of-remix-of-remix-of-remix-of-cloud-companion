@@ -12,7 +12,6 @@ import {
   Trash2,
   X,
   Save,
-  Tag,
   Code2,
   Lightbulb,
   Search,

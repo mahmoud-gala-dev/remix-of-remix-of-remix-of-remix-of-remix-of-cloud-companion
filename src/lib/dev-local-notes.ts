@@ -133,9 +133,9 @@ export async function getDevLocalNotes(bugId: number): Promise<DevLocalNote[]> {
  */
 export async function addDevLocalNote(payload: {
   bugId: number;
-  title?: string;
+  title?: string | undefined;
   content: string;
-  category?: DevLocalNoteCategory;
+  category?: DevLocalNoteCategory | undefined;
 }): Promise<DevLocalNote> {
   const now = new Date().toISOString();
   const note: DevLocalNote = {
