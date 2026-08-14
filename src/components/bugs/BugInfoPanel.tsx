@@ -344,7 +344,7 @@ export function BugInfoPanel({
                 (bug.tags ?? []).map((tag) => (
                   <Badge key={tag} variant="secondary" className="gap-1.5">
                     {tag}
-                    {canEdit && (
+                    {canEditLight && (
                       <button
                         type="button"
                         className="rounded-sm hover:text-destructive"
@@ -358,7 +358,7 @@ export function BugInfoPanel({
               ) : (
                 <EmptyValue label="No tags" />
               )}
-              {canEdit && (
+              {canEditLight && (
                 <div className="ms-auto flex items-center gap-1.5">
                   <Input
                     value={tagInput}
@@ -439,10 +439,10 @@ export function BugInfoPanel({
             <button
               type="button"
               className="block min-h-16 w-full whitespace-pre-wrap rounded-md border border-border/70 bg-muted/20 px-3 py-3 text-start text-sm leading-6 text-foreground hover:border-primary/40 hover:text-primary disabled:cursor-default disabled:hover:border-border/70 disabled:hover:text-foreground"
-              disabled={!canEdit}
-              onClick={() => canEdit && setEditingNotes(true)}
+              disabled={!canEditLight}
+              onClick={() => canEditLight && setEditingNotes(true)}
             >
-              {bug.notes || <EmptyValue label={canEdit ? "Click to add notes" : "No notes"} />}
+              {bug.notes || <EmptyValue label={canEditLight ? "Click to add notes" : "No notes"} />}
             </button>
           )}
         </DetailSection>
