@@ -27,7 +27,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { canEditBug, canChangeBugStatus, canViewBug } from "@/lib/permissions";
+import {
+  canEditBug,
+  canEditBugDetails,
+  canChangeBugStatus,
+  canViewBug,
+} from "@/lib/permissions";
 import { fetchProfiles, statusTone, priorityTone, type Bug } from "@/lib/api";
 import { profilesToMap } from "@/components/bugs/types";
 import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
@@ -235,7 +240,8 @@ function BugDetailPage() {
 
   const isReporter = user?.id === bug.reported_by;
   const isStaff = user?.role === "admin" || user?.role === "supervisor";
-  const canEdit = canEditBug(bug, user);
+  const canEditDetails = canEditBugDetails(bug, user);
+  const canEditTagsNotes = canEditBug(bug, user);
   const canChangeStatus = canChangeBugStatus(bug, user);
   const canDelete = isReporter || isStaff;
   const canManageRelated =
@@ -249,15 +255,15 @@ function BugDetailPage() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="icon">
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
             <Link to="/bugs">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-mono text-muted-foreground">{bug.bug_id}</span>
               <BugQuickStatus
                 bugId={bug.id}
@@ -269,17 +275,17 @@ function BugDetailPage() {
                 {bug.priority}
               </Badge>
             </div>
-            <h1 className="text-xl font-semibold text-foreground">{bug.title}</h1>
+            <h1 className="mt-1 break-words text-lg font-semibold leading-snug text-foreground sm:text-xl">{bug.title}</h1>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-md:justify-between">
           <KeyboardShortcutsDialog
             shortcuts={BUG_DETAIL_SHORTCUTS}
             open={shortcutsOpen}
             onOpenChange={setShortcutsOpen}
           />
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 max-md:flex-1">
             <Button
               variant="outline"
               size="sm"
@@ -354,8 +360,9 @@ function BugDetailPage() {
             bug={bug}
             profiles={profiles}
             profileMap={profileMap}
-            canEdit={canEdit}
+            canEdit={canEditDetails}
             canEditStatus={canChangeStatus}
+            canEditTagsNotes={canEditTagsNotes}
           />
           <BugDevNotes
             bugId={bug.id}
