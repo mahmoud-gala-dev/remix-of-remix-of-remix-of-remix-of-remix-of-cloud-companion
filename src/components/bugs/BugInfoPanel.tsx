@@ -84,13 +84,19 @@ export function BugInfoPanel({
   profileMap,
   canEdit,
   canEditStatus,
+  canEditTagsNotes,
 }: {
   bug: Bug;
   profiles: Profile[];
   profileMap: ProfileMap;
+  /** Full detail editing (priority, severity, assignee, module). */
   canEdit: boolean;
   canEditStatus?: boolean;
+  /** Lightweight fields (tags, notes) — defaults to `canEdit`. */
+  canEditTagsNotes?: boolean;
 }) {
+  const canEditLight = canEditTagsNotes ?? canEdit;
+
   const queryClient = useQueryClient();
   const notifyBug = useBugNotifier();
   const [editingModule, setEditingModule] = useState(false);
