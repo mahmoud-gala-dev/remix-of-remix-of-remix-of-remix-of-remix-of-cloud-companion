@@ -371,7 +371,7 @@ function TranslationPanel({ copy, bugText }: { copy: DevNotesCopy; bugText: stri
 
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-sm font-semibold">
             <Languages className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -379,9 +379,9 @@ function TranslationPanel({ copy, bugText }: { copy: DevNotesCopy; bugText: stri
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{copy.translatorHint}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
           {bugText && (
-            <Button variant="outline" size="sm" onClick={fillBugText}>
+            <Button variant="outline" size="sm" className="max-sm:flex-1" onClick={fillBugText}>
               {copy.pasteBug}
             </Button>
           )}
@@ -389,7 +389,7 @@ function TranslationPanel({ copy, bugText }: { copy: DevNotesCopy; bugText: stri
             value={targetLanguage}
             onValueChange={(value) => setTargetLanguage(value as "en" | "ar")}
           >
-            <SelectTrigger className="h-9 w-36">
+            <SelectTrigger className="h-9 w-36 max-sm:flex-1">
               <SelectValue aria-label={copy.translateTo} />
             </SelectTrigger>
             <SelectContent>
@@ -399,6 +399,7 @@ function TranslationPanel({ copy, bugText }: { copy: DevNotesCopy; bugText: stri
           </Select>
           <Button
             size="sm"
+            className="max-sm:w-full"
             disabled={!sourceText.trim() || translate.isPending}
             onClick={() => translate.mutate()}
           >
@@ -508,6 +509,8 @@ export function BugDevNotes({
   const copy = COPY[language === "ar" ? "ar" : "en"];
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  // Translator lives in its own collapsible widget inside the workspace.
+  const [translatorOpen, setTranslatorOpen] = useState(false);
   const [draft, setDraft] = useState<{
     kind: DevNoteKind;
     title: string;
@@ -558,20 +561,37 @@ export function BugDevNotes({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Braces className="h-4 w-4 text-primary" aria-hidden="true" />
             {copy.title}
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">{copy.kicker}</p>
         </div>
-        {canWrite && (
-          <Button size="sm" variant="outline" onClick={() => setOpen((value) => !value)}>
-            <Plus className="me-1.5 h-4 w-4" aria-hidden="true" />
-            {copy.add}
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
+          <Button
+            size="sm"
+            variant={translatorOpen ? "secondary" : "outline"}
+            className="max-sm:flex-1"
+            aria-expanded={translatorOpen}
+            onClick={() => setTranslatorOpen((value) => !value)}
+          >
+            <Languages className="me-1.5 h-4 w-4" aria-hidden="true" />
+            {copy.translatorTitle}
           </Button>
-        )}
+          {canWrite && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="max-sm:flex-1"
+              onClick={() => setOpen((value) => !value)}
+            >
+              <Plus className="me-1.5 h-4 w-4" aria-hidden="true" />
+              {copy.add}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {!canWrite && (
@@ -580,7 +600,7 @@ export function BugDevNotes({
           </p>
         )}
 
-        <TranslationPanel copy={copy} bugText={bugText} />
+        {translatorOpen && <TranslationPanel copy={copy} bugText={bugText} />}
 
         {open && canWrite && (
           <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
