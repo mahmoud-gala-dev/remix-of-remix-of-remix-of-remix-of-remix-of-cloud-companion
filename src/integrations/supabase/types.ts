@@ -968,6 +968,10 @@ export type Database = {
         Returns: boolean
       }
       can_report_bugs: { Args: { _user_id: string }; Returns: boolean }
+      can_write_bug_dev_note: {
+        Args: { _bug_id: number; _user_id: string }
+        Returns: boolean
+      }
       get_resolution_time_analytics: {
         Args: never
         Returns: {
