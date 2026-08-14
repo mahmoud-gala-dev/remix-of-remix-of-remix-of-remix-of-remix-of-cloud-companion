@@ -402,6 +402,32 @@ function BugDetailPage() {
 
       {/* Waiting bugs list — personal deferred bugs stored in localStorage */}
       {user?.role === "developer" && <WaitingBugsList refreshSignal={waitingRevision} />}
+
+      {/* Mobile-only sticky pager so navigation stays reachable on small screens */}
+      <div className="sticky bottom-2 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border/60 bg-card/95 p-2 shadow-lg backdrop-blur md:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!prevBugId}
+          onClick={() => goToBug(prevBugId)}
+          aria-label={t("common.previous")}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="truncate text-center text-xs text-muted-foreground">
+          {bug.bug_id}
+          {currentIndex >= 0 && bugOrder.length > 0 ? ` · ${currentIndex + 1}/${bugOrder.length}` : ""}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!nextBugId}
+          onClick={() => goToBug(nextBugId)}
+          aria-label={t("common.next")}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
