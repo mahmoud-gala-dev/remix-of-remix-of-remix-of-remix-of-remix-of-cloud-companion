@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Plus, Pencil, Check, ClipboardList, Settings2 } from "lucide-react";
+import { X, Plus, Pencil, Check, ClipboardList, Settings2, Copy, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BUG_STATUSES,
@@ -30,26 +30,52 @@ import { BugQuickStatus } from "@/components/bugs/BugQuickStatus";
 import { AssigneeSelect } from "@/components/bugs/AssigneeSelect";
 import { nameFor, type ProfileMap } from "@/components/bugs/types";
 
-
 function EmptyValue({ label = "Not set" }: { label?: string }) {
   return <span className="text-muted-foreground">{label}</span>;
+}
+
+function CopyAction({ text }: { text: string | null | undefined }) {
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+      onClick={() => {
+        void navigator.clipboard.writeText(text);
+        setCopied(true);
+        toast.success("Copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      title="Copy to clipboard"
+    >
+      {copied ? <CheckCheck className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+    </Button>
+  );
 }
 
 function DetailField({
   label,
   value,
+  action,
   className = "",
 }: {
   label: string;
   value: ReactNode;
+  action?: ReactNode;
   className?: string;
 }) {
   return (
     <div className={`min-w-0 space-y-1.5 ${className}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <div className="min-h-9 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm text-foreground">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        {action}
+      </div>
+      <div className="min-h-9 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm text-foreground">
         {value}
       </div>
     </div>
@@ -83,18 +109,22 @@ export function BugInfoPanel({
   profiles,
   profileMap,
   canEdit,
+  canAssign,
   canEditStatus,
   canEditTagsNotes,
 }: {
   bug: Bug;
   profiles: Profile[];
   profileMap: ProfileMap;
-  /** Full detail editing (priority, severity, assignee, module). */
+  /** Full detail editing (priority, severity, module). */
   canEdit: boolean;
+  /** Whether the user may assign/reassign the bug. */
+  canAssign?: boolean;
   canEditStatus?: boolean;
   /** Lightweight fields (tags, notes) — defaults to `canEdit`. */
   canEditTagsNotes?: boolean;
 }) {
+  const allowAssign = canAssign ?? canEdit;
   const canEditLight = canEditTagsNotes ?? canEdit;
 
   const queryClient = useQueryClient();
@@ -256,7 +286,7 @@ export function BugInfoPanel({
             <DetailField
               label="Assignee"
               value={
-                canEdit ? (
+                allowAssign ? (
                   <AssigneeSelect
                     profiles={profiles}
                     value={bug.assigned_to}
@@ -330,6 +360,7 @@ export function BugInfoPanel({
             />
             <DetailField
               label="Environment"
+              action={<CopyAction text={bug.environment} />}
               value={bug.environment || <EmptyValue />}
               className="md:col-span-2"
             />
@@ -387,11 +418,13 @@ export function BugInfoPanel({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <DetailField
               label="Steps to Reproduce"
+              action={<CopyAction text={bug.steps} />}
               className="md:col-span-2"
               value={<p className="whitespace-pre-wrap leading-6">{bug.steps || <EmptyValue />}</p>}
             />
             <DetailField
               label="Expected Result"
+              action={<CopyAction text={bug.expected_result} />}
               value={
                 <span className="whitespace-pre-wrap leading-6">
                   {bug.expected_result || <EmptyValue />}
@@ -400,6 +433,7 @@ export function BugInfoPanel({
             />
             <DetailField
               label="Actual Result"
+              action={<CopyAction text={bug.actual_result} />}
               value={
                 <span className="whitespace-pre-wrap leading-6">
                   {bug.actual_result || <EmptyValue />}

@@ -20,11 +20,17 @@ export function AssigneeSelect({
   profiles,
   value,
   disabled,
+  size = "default",
+  className = "",
+  placeholder = "Unassigned",
   onChange,
 }: {
   profiles: Profile[];
   value: string | null;
   disabled?: boolean;
+  size?: "default" | "sm";
+  className?: string;
+  placeholder?: string;
   onChange: (next: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -67,12 +73,14 @@ export function AssigneeSelect({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="h-9 w-full justify-between bg-background font-normal"
+          className={`${
+            size === "sm" ? "h-7 text-xs px-2" : "h-9 text-sm"
+          } w-full justify-between bg-background font-normal ${className}`}
         >
-          <span className={selected ? "" : "text-muted-foreground"}>
-            {selected?.username ?? "Unassigned"}
+          <span className={`truncate ${selected ? "" : "text-muted-foreground"}`}>
+            {selected?.username ?? placeholder}
           </span>
-          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ms-1.5 h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[260px] p-0" align="start">

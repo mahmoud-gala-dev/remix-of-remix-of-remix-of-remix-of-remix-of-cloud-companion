@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -50,16 +50,52 @@ export function BugAssistance({
   currentUserId,
   profiles,
   profileMap,
+  projectId = null,
+  reportedBy = null,
+  assignedTo = null,
 }: {
   bugId: number;
   currentUserId: string | null;
   profiles: Profile[];
   profileMap: ProfileMap;
+  projectId?: number | null;
+  reportedBy?: string | null;
+  assignedTo?: string | null;
 }) {
   const queryClient = useQueryClient();
   const [targetUserId, setTargetUserId] = useState("");
   const [type, setType] = useState<"help" | "meeting">("help");
   const [message, setMessage] = useState("");
+
+  const { data: projectMembers = [] } = useQuery({
+    queryKey: ["project-developers", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("project_developers")
+        .select("user_id")
+        .eq("project_id", projectId);
+      if (error) return [];
+      return data ?? [];
+    },
+    enabled: Boolean(projectId),
+  });
+
+  const eligibleProfiles = useMemo(() => {
+    // 1. Only active users who are not the current user
+    const active = profiles.filter((p) => p.is_active !== false && p.id !== currentUserId);
+
+    if (!projectId || projectMembers.length === 0) {
+      return active;
+    }
+
+    const projectMemberIds = new Set(projectMembers.map((m) => m.user_id));
+    if (reportedBy) projectMemberIds.add(reportedBy);
+    if (assignedTo) projectMemberIds.add(assignedTo);
+
+    const projectFiltered = active.filter((p) => projectMemberIds.has(p.id));
+    return projectFiltered.length > 0 ? projectFiltered : active;
+  }, [profiles, currentUserId, projectId, projectMembers, reportedBy, assignedTo]);
 
   const { data: requests = [] } = useQuery({
     queryKey: ["assistance-requests", bugId, currentUserId],
@@ -122,13 +158,11 @@ export function BugAssistance({
               <SelectValue placeholder="Teammate" />
             </SelectTrigger>
             <SelectContent>
-              {profiles
-                .filter((p) => p.id !== currentUserId)
-                .map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.username}
-                  </SelectItem>
-                ))}
+              {eligibleProfiles.map((p: Profile) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.username}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={type} onValueChange={(v) => setType(v as "help" | "meeting")}>

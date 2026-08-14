@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Copy, CheckCheck, Share2, Trash2 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   BUG_DETAIL_SHORTCUTS,
@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import {
+  canAssignBug,
   canEditBug,
   canEditBugDetails,
   canChangeBugStatus,
@@ -240,6 +241,7 @@ function BugDetailPage() {
 
   const isReporter = user?.id === bug.reported_by;
   const isStaff = user?.role === "admin" || user?.role === "supervisor";
+  const canAssign = canAssignBug(bug, user);
   const canEditDetails = canEditBugDetails(bug, user);
   const canEditTagsNotes = canEditBug(bug, user);
   const canChangeStatus = canChangeBugStatus(bug, user);
@@ -253,101 +255,151 @@ function BugDetailPage() {
     user?.role === "developer" && (!bug.assigned_to || bug.assigned_to === user.id);
   const canWriteDeveloperWorkspace = isStaff || canTrackResolutionTime;
 
+  const copyBugLink = () => {
+    void navigator.clipboard.writeText(window.location.href);
+    toast.success("Bug link copied to clipboard");
+  };
+
+  const copyBugId = () => {
+    void navigator.clipboard.writeText(bug.bug_id);
+    toast.success("Bug ID copied", { description: bug.bug_id });
+  };
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-          <Button asChild variant="ghost" size="icon" className="shrink-0">
-            <Link to="/bugs">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-mono text-muted-foreground">{bug.bug_id}</span>
-              <BugQuickStatus
-                bugId={bug.id}
-                status={bug.status}
-                canEdit={canChangeStatus}
-                size="sm"
-              />
-              <Badge variant="outline" className={priorityTone(bug.priority)}>
-                {bug.priority}
-              </Badge>
+      {/* ── Top Hero Header ─────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card/90 to-primary/5 p-5 shadow-sm">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
+        />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3.5">
+            <Button asChild variant="outline" size="icon" className="shrink-0 h-9 w-9 rounded-xl bg-background/80 shadow-xs">
+              <Link to="/bugs">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copyBugId}
+                  title="Click to copy Bug ID"
+                  className="group inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-muted/40 px-2 py-0.5 font-mono text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+                >
+                  <span>{bug.bug_id}</span>
+                  <Copy className="h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
+                </button>
+                <BugQuickStatus
+                  bugId={bug.id}
+                  status={bug.status}
+                  canEdit={canChangeStatus}
+                  size="sm"
+                />
+                <Badge variant="outline" className={priorityTone(bug.priority)}>
+                  {bug.priority}
+                </Badge>
+                <Badge variant="outline" className={priorityTone(bug.severity)}>
+                  {bug.severity}
+                </Badge>
+                {bug.module && (
+                  <Badge variant="secondary" className="text-xs">
+                    {bug.module}
+                  </Badge>
+                )}
+              </div>
+              <h1 className="break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {bug.title}
+              </h1>
             </div>
-            <h1 className="mt-1 break-words text-lg font-semibold leading-snug text-foreground sm:text-xl">{bug.title}</h1>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2 max-md:justify-between">
-          <KeyboardShortcutsDialog
-            shortcuts={BUG_DETAIL_SHORTCUTS}
-            open={shortcutsOpen}
-            onOpenChange={setShortcutsOpen}
-          />
-          <div className="flex items-center gap-1 max-md:flex-1">
+          <div className="flex flex-wrap items-center gap-2 max-lg:justify-between">
+            <KeyboardShortcutsDialog
+              shortcuts={BUG_DETAIL_SHORTCUTS}
+              open={shortcutsOpen}
+              onOpenChange={setShortcutsOpen}
+            />
+
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              disabled={!prevBugId}
-              onClick={() =>
-                prevBugId && navigate({ to: "/bugs/$id", params: { id: String(prevBugId) } })
-              }
+              onClick={copyBugLink}
+              title="Share / Copy Link"
+              className="bg-background/80"
             >
-              <ChevronLeft className="me-1 h-4 w-4" /> {t("common.previous")}
+              <Share2 className="me-1.5 h-3.5 w-3.5" />
+              Share
             </Button>
-            {currentIndex >= 0 && bugOrder.length > 0 && (
-              <span className="px-1 text-xs text-muted-foreground">
-                {currentIndex + 1} / {bugOrder.length}
-              </span>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!prevBugId}
+                className="bg-background/80"
+                onClick={() =>
+                  prevBugId && navigate({ to: "/bugs/$id", params: { id: String(prevBugId) } })
+                }
+              >
+                <ChevronLeft className="me-1 h-4 w-4" /> {t("common.previous")}
+              </Button>
+              {currentIndex >= 0 && bugOrder.length > 0 && (
+                <span className="px-2 font-mono text-xs text-muted-foreground">
+                  {currentIndex + 1} / {bugOrder.length}
+                </span>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!nextBugId}
+                className="bg-background/80"
+                onClick={() =>
+                  nextBugId && navigate({ to: "/bugs/$id", params: { id: String(nextBugId) } })
+                }
+              >
+                {t("common.next")} <ChevronRight className="ms-1 h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Wait button — developer only: defers the bug and skips to next */}
+            {user?.role === "developer" && (
+              <Button
+                variant={waitingNow ? "secondary" : "outline"}
+                size="sm"
+                title={t("bug.wait.tooltip")}
+                onClick={() => handleWait(bug)}
+                className={waitingNow ? "border-warning/40 bg-warning/10 text-warning" : "bg-background/80"}
+              >
+                <Clock className="me-1.5 h-3.5 w-3.5" />
+                {t("bug.wait")}
+              </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!nextBugId}
-              onClick={() =>
-                nextBugId && navigate({ to: "/bugs/$id", params: { id: String(nextBugId) } })
-              }
-            >
-              {t("common.next")} <ChevronRight className="ms-1 h-4 w-4" />
-            </Button>
+
+            {canDelete && (
+              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="me-1.5 h-3.5 w-3.5" /> {t("bug.delete")}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("bug.delete.title")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("bug.delete.body")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteBug.mutate()}>
+                      {t("common.delete")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
-
-          {/* Wait button — developer only: defers the bug and skips to next */}
-          {user?.role === "developer" && (
-            <Button
-              variant={waitingNow ? "secondary" : "outline"}
-              size="sm"
-              title={t("bug.wait.tooltip")}
-              onClick={() => handleWait(bug)}
-              className={waitingNow ? "border-warning/40 bg-warning/10 text-warning" : ""}
-            >
-              <Clock className="me-1.5 h-3.5 w-3.5" />
-              {t("bug.wait")}
-            </Button>
-          )}
-
-          {canDelete && (
-            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="me-1.5 h-3.5 w-3.5" /> {t("bug.delete")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("bug.delete.title")}</AlertDialogTitle>
-                  <AlertDialogDescription>{t("bug.delete.body")}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteBug.mutate()}>
-                    {t("common.delete")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
         </div>
       </div>
 
@@ -361,6 +413,7 @@ function BugDetailPage() {
             profiles={profiles}
             profileMap={profileMap}
             canEdit={canEditDetails}
+            canAssign={canAssign}
             canEditStatus={canChangeStatus}
             canEditTagsNotes={canEditTagsNotes}
           />
@@ -387,6 +440,9 @@ function BugDetailPage() {
             currentUserId={user?.id ?? null}
             profiles={profiles}
             profileMap={profileMap}
+            projectId={bug.project_id}
+            reportedBy={bug.reported_by}
+            assignedTo={bug.assigned_to}
           />
           <BugHistoryTimeline bugId={bug.id} profileMap={profileMap} />
         </div>

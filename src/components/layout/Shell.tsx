@@ -29,6 +29,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
+import {
+  DesktopNavigationContextMenu,
+  DesktopQuickNavDropdown,
+} from "@/components/layout/DesktopNavigationContextMenu";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -214,6 +218,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="ms-auto flex items-center gap-2">
             <GlobalSearch />
+            <DesktopQuickNavDropdown />
             <LanguageToggle />
             <Link
               to="/notifications"
@@ -233,7 +238,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         </header>
 
-        <main className="flex-1 overflow-auto p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
+        <DesktopNavigationContextMenu>
+          <main className="flex-1 overflow-auto p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
+        </DesktopNavigationContextMenu>
 
         {/* Mobile bottom tab bar — native app feel on small screens */}
         <nav

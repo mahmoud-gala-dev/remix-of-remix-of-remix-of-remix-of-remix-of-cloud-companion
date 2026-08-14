@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canAssignBug,
   canChangeBugStatus,
   canEditBug,
   canReportBugs,
@@ -58,4 +59,31 @@ describe("role permissions", () => {
     expect(canChangeBugStatus(unassignedBug, developer)).toBe(true);
     expect(canEditBug(unassignedBug, developer)).toBe(false);
   });
+
+  it("handles assignment and re-assignment permissions correctly", () => {
+    const assignedDev = { id: "developer-1", role: "developer" };
+    const otherDev = { id: "developer-2", role: "developer" };
+    const admin = { id: "admin-1", role: "admin" };
+    const reporter = { id: "tester-1", role: "tester" };
+    const otherTester = { id: "tester-2", role: "tester" };
+
+    // Staff can assign both assigned and unassigned bugs
+    expect(canAssignBug(assignedBug, admin)).toBe(true);
+    expect(canAssignBug(unassignedBug, admin)).toBe(true);
+
+    // Reporter can assign their reported bugs
+    expect(canAssignBug(assignedBug, reporter)).toBe(true);
+    expect(canAssignBug(unassignedBug, reporter)).toBe(true);
+    expect(canAssignBug(assignedBug, otherTester)).toBe(false);
+
+    // Assigned developer can reassign their own bug
+    expect(canAssignBug(assignedBug, assignedDev)).toBe(true);
+
+    // Any developer can assign an unassigned bug
+    expect(canAssignBug(unassignedBug, otherDev)).toBe(true);
+
+    // Non-assigned developer cannot reassign someone else's bug
+    expect(canAssignBug(assignedBug, otherDev)).toBe(false);
+  });
 });
+

@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardPagination } from "@/components/dashboard/DashboardPagination";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -152,6 +153,22 @@ function ProjectDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
+  const [tasksPage, setTasksPage] = useState(1);
+  const TASKS_PAGE_SIZE = 5;
+  const projectTasks = tasks ?? [];
+  const paginatedTasks = projectTasks.slice(
+    (tasksPage - 1) * TASKS_PAGE_SIZE,
+    tasksPage * TASKS_PAGE_SIZE,
+  );
+
+  const [bugsPage, setBugsPage] = useState(1);
+  const BUGS_PAGE_SIZE = 5;
+  const projectBugs = bugs ?? [];
+  const paginatedBugs = projectBugs.slice(
+    (bugsPage - 1) * BUGS_PAGE_SIZE,
+    bugsPage * BUGS_PAGE_SIZE,
+  );
+
   const importMutation = useMutation({
     mutationFn: (file: File) =>
       importBugsFromExcel({ file, projectId, uploadedById: user?.id ?? null }),
@@ -191,12 +208,14 @@ function ProjectDetailPage() {
           key: values.key.trim().toUpperCase(),
           description: values.description.trim() || null,
           status: values.status,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", projectId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       setEditOpen(false);
       toast.success("Project updated");
     },
@@ -209,107 +228,118 @@ function ProjectDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Project deleted");
       navigate({ to: "/projects" });
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const usernameOf = (uid: string | null) =>
-    (profiles ?? []).find((p) => p.id === uid)?.username ?? "—";
-
-  const statusData = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const bug of bugs ?? []) map.set(bug.status, (map.get(bug.status) ?? 0) + 1);
-    return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
-  }, [bugs]);
+  const usernameOf = (userId: string | null) => {
+    if (!userId) return "Unassigned";
+    return (profiles ?? []).find((p) => p.id === userId)?.username ?? "Unknown";
+  };
 
   if (isLoading) return <DetailSkeleton />;
-  if (!project) {
-    return (
-      <div className="mx-auto max-w-2xl py-16 text-center text-muted-foreground">
-        Project not found.
-        <div className="mt-4">
-          <Button asChild variant="outline">
-            <Link to="/projects">Back to Projects</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (!project) return <RouteNotFound label="project" />;
+
+  const statusCounts = (bugs ?? []).reduce<Record<string, number>>((acc, bug) => {
+    acc[bug.status] = (acc[bug.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const chartData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-12">
-      <Button asChild variant="ghost" size="sm" className="-ms-2">
-        <Link to="/projects">
-          <ArrowLeft className="me-2 h-4 w-4" />
-          Back to Projects
-        </Link>
-      </Button>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                <FolderKanban className="h-4 w-4" />
-                {project.key}
-              </div>
-              <CardTitle className="text-2xl">{project.name}</CardTitle>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                {project.description || "No description provided."}
-              </p>
-            </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/projects">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{project.status}</Badge>
-              {canManage && (
-                <>
-                  <Button variant="outline" size="sm" onClick={openEdit}>
-                    <Pencil className="me-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-                    <Trash2 className="me-2 h-4 w-4 text-destructive" />
-                    Delete
-                  </Button>
-                </>
-              )}
+              <span className="font-mono text-sm text-muted-foreground">{project.key}</span>
+              <Badge variant="outline">{project.status ?? "Active"}</Badge>
             </div>
+            <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
           </div>
-        </CardHeader>
-      </Card>
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openEdit}>
+              <Pencil className="me-2 h-4 w-4" /> Edit
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="me-2 h-4 w-4" /> Delete
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {project.description && (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">{project.description}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Bug Status Breakdown</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderKanban className="h-4 w-4" />
+              Bug Status Breakdown
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {statusData.length ? (
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={56}
-                      outerRadius={80}
-                      dataKey="value"
-                      paddingAngle={2}
-                    >
-                      {statusData.map((entry, i) => (
-                        <Cell key={i} fill={STATUS_COLORS[entry.name] ?? "var(--primary)"} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            {chartData.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">No bugs to display.</p>
             ) : (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                No bugs yet for this project.
-              </p>
+              <div className="flex flex-col items-center gap-4 sm:flex-row">
+                <div className="h-48 w-48 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        strokeWidth={2}
+                      >
+                        {chartData.map((entry) => (
+                          <Cell
+                            key={entry.name}
+                            fill={STATUS_COLORS[entry.name] ?? "var(--muted)"}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-1.5 text-sm">
+                  {chartData.map((entry) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                      <span
+                        className="h-3 w-3 rounded-full"
+                        style={{
+                          backgroundColor: STATUS_COLORS[entry.name] ?? "var(--muted)",
+                        }}
+                      />
+                      <span className="font-medium">{entry.name}:</span>
+                      <span className="text-muted-foreground">{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -318,26 +348,35 @@ function ProjectDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardList className="h-4 w-4" />
-              Tasks ({tasks?.length ?? 0})
+              Tasks ({projectTasks.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {(tasks ?? []).length === 0 ? (
+          <CardContent className="space-y-3">
+            {projectTasks.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No tasks linked to this project.
               </p>
             ) : (
-              (tasks ?? []).map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center justify-between rounded-md border border-border p-2 text-sm"
-                >
-                  <span className="truncate">{task.title}</span>
-                  <Badge variant="outline" className={statusTone(task.status)}>
-                    {task.status}
-                  </Badge>
-                </div>
-              ))
+              <div className="space-y-2">
+                {paginatedTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between rounded-md border border-border p-2.5 text-sm"
+                  >
+                    <span className="truncate">{task.title}</span>
+                    <Badge variant="outline" className={statusTone(task.status)}>
+                      {task.status}
+                    </Badge>
+                  </div>
+                ))}
+                <DashboardPagination
+                  page={tasksPage}
+                  totalItems={projectTasks.length}
+                  pageSize={TASKS_PAGE_SIZE}
+                  onPageChange={setTasksPage}
+                  itemLabel="tasks"
+                />
+              </div>
             )}
           </CardContent>
         </Card>
@@ -347,7 +386,7 @@ function ProjectDetailPage() {
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Bugs ({bugs?.length ?? 0})</CardTitle>
+          <CardTitle className="text-base">Bugs ({projectBugs.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
@@ -383,45 +422,56 @@ function ProjectDetailPage() {
         <CardContent>
           {bugsLoading ? (
             <Skeleton className="h-40 w-full" />
-          ) : (bugs ?? []).length === 0 ? (
+          ) : projectBugs.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No bugs reported for this project.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Assigned to</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(bugs ?? []).map((bug) => (
-                  <TableRow
-                    key={bug.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate({ to: "/bugs/$id", params: { id: String(bug.id) } })}
-                  >
-                    <TableCell className="font-mono text-xs">{bug.bug_id}</TableCell>
-                    <TableCell className="max-w-xs truncate">{bug.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={statusTone(bug.status)}>
-                        {bug.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={priorityTone(bug.priority)}>
-                        {bug.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{usernameOf(bug.assigned_to)}</TableCell>
+            <div className="space-y-3">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Reported by</TableHead>
+                    <TableHead>Assigned to</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedBugs.map((bug) => (
+                    <TableRow
+                      key={bug.id}
+                      className="cursor-pointer"
+                      onClick={() => navigate({ to: "/bugs/$id", params: { id: String(bug.id) } })}
+                    >
+                      <TableCell className="font-mono text-xs font-semibold">{bug.bug_id}</TableCell>
+                      <TableCell className="max-w-xs truncate font-medium">{bug.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statusTone(bug.status)}>
+                          {bug.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={priorityTone(bug.priority)}>
+                          {bug.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">{usernameOf(bug.reported_by)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{usernameOf(bug.assigned_to)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <DashboardPagination
+                page={bugsPage}
+                totalItems={projectBugs.length}
+                pageSize={BUGS_PAGE_SIZE}
+                onPageChange={setBugsPage}
+                itemLabel="bugs"
+              />
+            </div>
           )}
         </CardContent>
       </Card>

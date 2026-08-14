@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AtSign, Bug as BugIcon, ClipboardList, Inbox, ShieldAlert } from "lucide-react";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlaBadge } from "@/components/bugs/SlaBadge";
+import { DashboardPagination } from "@/components/dashboard/DashboardPagination";
 
 export const Route = createFileRoute("/_authenticated/my-work")({
   head: () => ({
@@ -132,10 +133,33 @@ function MyWorkPage() {
     () =>
       openBugs
         .filter((bug) => ["breached", "at-risk"].includes(slaState(bug)))
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .slice(0, 8),
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
     [openBugs],
   );
+
+  const [bugsPage, setBugsPage] = useState(1);
+  const BUGS_PAGE_SIZE = 5;
+  const paginatedBugs = openBugs.slice((bugsPage - 1) * BUGS_PAGE_SIZE, bugsPage * BUGS_PAGE_SIZE);
+
+  const tasksList = tasksQuery.data ?? [];
+  const [tasksPage, setTasksPage] = useState(1);
+  const TASKS_PAGE_SIZE = 5;
+  const paginatedTasks = tasksList.slice(
+    (tasksPage - 1) * TASKS_PAGE_SIZE,
+    tasksPage * TASKS_PAGE_SIZE,
+  );
+
+  const inboxList = inboxQuery.data ?? [];
+  const [inboxPage, setInboxPage] = useState(1);
+  const INBOX_PAGE_SIZE = 4;
+  const paginatedInbox = inboxList.slice(
+    (inboxPage - 1) * INBOX_PAGE_SIZE,
+    inboxPage * INBOX_PAGE_SIZE,
+  );
+
+  const [slaPage, setSlaPage] = useState(1);
+  const SLA_PAGE_SIZE = 5;
+  const paginatedSla = atRisk.slice((slaPage - 1) * SLA_PAGE_SIZE, slaPage * SLA_PAGE_SIZE);
 
   const loading = bugsQuery.isLoading || tasksQuery.isLoading || inboxQuery.isLoading;
 
@@ -153,7 +177,7 @@ function MyWorkPage() {
           { label: t("myWork.stat.openBugs"), value: openBugs.length },
           { label: t("myWork.stat.breached"), value: aging.breached },
           { label: t("myWork.stat.atRisk"), value: aging.atRisk },
-          { label: t("myWork.stat.openTasks"), value: (tasksQuery.data ?? []).length },
+          { label: t("myWork.stat.openTasks"), value: tasksList.length },
         ].map((stat) => (
           <Card key={stat.label} className="border-border/60">
             <CardContent className="pt-6">
@@ -177,24 +201,33 @@ function MyWorkPage() {
             {openBugs.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("myWork.bugs.empty")}</p>
             ) : (
-              openBugs.slice(0, 10).map((bug) => (
-                <Link
-                  key={bug.id}
-                  to="/bugs/$id"
-                  params={{ id: String(bug.id) }}
-                  className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
-                >
-                  <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
-                  <span className="min-w-0 flex-1 truncate">{bug.title}</span>
-                  <Badge variant="outline" className={priorityTone(bug.priority)}>
-                    {bug.priority}
-                  </Badge>
-                  <Badge variant="outline" className={statusTone(bug.status)}>
-                    {bug.status}
-                  </Badge>
-                  <SlaBadge bug={bug} />
-                </Link>
-              ))
+              <div className="space-y-2">
+                {paginatedBugs.map((bug) => (
+                  <Link
+                    key={bug.id}
+                    to="/bugs/$id"
+                    params={{ id: String(bug.id) }}
+                    className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
+                    <span className="min-w-0 flex-1 truncate">{bug.title}</span>
+                    <Badge variant="outline" className={priorityTone(bug.priority)}>
+                      {bug.priority}
+                    </Badge>
+                    <Badge variant="outline" className={statusTone(bug.status)}>
+                      {bug.status}
+                    </Badge>
+                    <SlaBadge bug={bug} />
+                  </Link>
+                ))}
+                <DashboardPagination
+                  page={bugsPage}
+                  totalItems={openBugs.length}
+                  pageSize={BUGS_PAGE_SIZE}
+                  onPageChange={setBugsPage}
+                  itemLabel="bugs"
+                />
+              </div>
             )}
           </SectionCard>
 
@@ -202,23 +235,32 @@ function MyWorkPage() {
             title={t("myWork.tasks.title")}
             description={t("myWork.tasks.description")}
             icon={ClipboardList}
-            count={(tasksQuery.data ?? []).length}
+            count={tasksList.length}
           >
-            {(tasksQuery.data ?? []).length === 0 ? (
+            {tasksList.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("myWork.tasks.empty")}</p>
             ) : (
-              (tasksQuery.data ?? []).slice(0, 10).map((task) => (
-                <Link
-                  key={task.id}
-                  to="/tasks"
-                  className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
-                >
-                  <span className="min-w-0 flex-1 truncate">{task.title}</span>
-                  {task.is_important && <Badge variant="destructive">{t("myWork.tasks.important")}</Badge>}
-                  <Badge variant="outline">{task.priority}</Badge>
-                  <Badge variant="outline">{task.status}</Badge>
-                </Link>
-              ))
+              <div className="space-y-2">
+                {paginatedTasks.map((task) => (
+                  <Link
+                    key={task.id}
+                    to="/tasks"
+                    className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                    {task.is_important && <Badge variant="destructive">{t("myWork.tasks.important")}</Badge>}
+                    <Badge variant="outline">{task.priority}</Badge>
+                    <Badge variant="outline">{task.status}</Badge>
+                  </Link>
+                ))}
+                <DashboardPagination
+                  page={tasksPage}
+                  totalItems={tasksList.length}
+                  pageSize={TASKS_PAGE_SIZE}
+                  onPageChange={setTasksPage}
+                  itemLabel="tasks"
+                />
+              </div>
             )}
           </SectionCard>
 
@@ -226,41 +268,50 @@ function MyWorkPage() {
             title={t("myWork.inbox.title")}
             description={t("myWork.inbox.description")}
             icon={Inbox}
-            count={(inboxQuery.data ?? []).length}
+            count={inboxList.length}
           >
-            {(inboxQuery.data ?? []).length === 0 ? (
+            {inboxList.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("myWork.inbox.empty")}</p>
             ) : (
-              (inboxQuery.data ?? []).slice(0, 10).map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start gap-2 rounded-md border border-border/60 px-3 py-2 text-sm"
-                >
-                  {item.type === "chat_mention" ? (
-                    <AtSign className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  ) : (
-                    <ShieldAlert
-                      className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate">{item.message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
+              <div className="space-y-2">
+                {paginatedInbox.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-2 rounded-md border border-border/60 px-3 py-2 text-sm"
+                  >
+                    {item.type === "chat_mention" ? (
+                      <AtSign className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    ) : (
+                      <ShieldAlert
+                        className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate">{item.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(item.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    {item.bug_id && (
+                      <Link
+                        to="/bugs/$id"
+                        params={{ id: String(item.bug_id) }}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        {t("myWork.inbox.open")}
+                      </Link>
+                    )}
                   </div>
-                  {item.bug_id && (
-                    <Link
-                      to="/bugs/$id"
-                      params={{ id: String(item.bug_id) }}
-                      className="text-xs font-medium text-primary hover:underline"
-                    >
-                      {t("myWork.inbox.open")}
-                    </Link>
-                  )}
-                </div>
-              ))
+                ))}
+                <DashboardPagination
+                  page={inboxPage}
+                  totalItems={inboxList.length}
+                  pageSize={INBOX_PAGE_SIZE}
+                  onPageChange={setInboxPage}
+                  itemLabel="notifications"
+                />
+              </div>
             )}
           </SectionCard>
 
@@ -273,19 +324,28 @@ function MyWorkPage() {
             {atRisk.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("myWork.sla.empty")}</p>
             ) : (
-              atRisk.map((bug) => (
-                <Link
-                  key={bug.id}
-                  to="/bugs/$id"
-                  params={{ id: String(bug.id) }}
-                  className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
-                >
-                  <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
-                  <span className="min-w-0 flex-1 truncate">{bug.title}</span>
-                  <span className="text-xs text-muted-foreground">{slaLabel(bug)}</span>
-                  <SlaBadge bug={bug} />
-                </Link>
-              ))
+              <div className="space-y-2">
+                {paginatedSla.map((bug) => (
+                  <Link
+                    key={bug.id}
+                    to="/bugs/$id"
+                    params={{ id: String(bug.id) }}
+                    className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/60"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>
+                    <span className="min-w-0 flex-1 truncate">{bug.title}</span>
+                    <span className="text-xs text-muted-foreground">{slaLabel(bug)}</span>
+                    <SlaBadge bug={bug} />
+                  </Link>
+                ))}
+                <DashboardPagination
+                  page={slaPage}
+                  totalItems={atRisk.length}
+                  pageSize={SLA_PAGE_SIZE}
+                  onPageChange={setSlaPage}
+                  itemLabel="alerts"
+                />
+              </div>
             )}
           </SectionCard>
         </div>

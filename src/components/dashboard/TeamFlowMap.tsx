@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/lib/i18n";
 import { fetchBugs, fetchProfiles, fetchUserRoleMap, type Bug } from "@/lib/api";
 import { buildFlowGraph, relatedIds, type FlowNode } from "@/lib/team-flow";
+import { DashboardPagination } from "@/components/dashboard/DashboardPagination";
 
 const COPY = {
   en: {
@@ -87,9 +88,15 @@ function shortLabel(value: string, max = 22) {
 export function TeamFlowMap() {
   const { language } = useI18n();
   const copy = COPY[language === "ar" ? "ar" : "en"];
-  const [focus, setFocus] = useState<string | null>(null);
+  const [focus, setFocusState] = useState<string | null>(null);
+  const [focusedPage, setFocusedPage] = useState(1);
   const [hover, setHover] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  const setFocus = (val: string | null | ((prev: string | null) => string | null)) => {
+    setFocusedPage(1);
+    setFocusState(val);
+  };
 
 
   const bugsQuery = useQuery({ queryKey: ["flow-bugs"], queryFn: fetchBugs, staleTime: 30_000 });
@@ -315,8 +322,8 @@ export function TeamFlowMap() {
           </div>
 
           {focus && (
-            <div className="rounded-xl border border-border/60 bg-card p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="rounded-xl border border-border/60 bg-card p-3.5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold">
                   {copy.related} · {names[focus] ?? copy.unknownMember}
                 </p>
@@ -327,21 +334,30 @@ export function TeamFlowMap() {
                 </Button>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {focusedBugs.map((bug) => (
-                  <Link
-                    key={bug.id}
-                    to="/bugs/$id"
-                    params={{ id: String(bug.id) }}
-                    className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/40"
-                  >
-                    <span className="min-w-0 truncate">
-                      <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>{" "}
-                      {bug.title}
-                    </span>
-                    <Badge variant="outline">{bug.status}</Badge>
-                  </Link>
-                ))}
+                {focusedBugs
+                  .slice((focusedPage - 1) * 6, focusedPage * 6)
+                  .map((bug) => (
+                    <Link
+                      key={bug.id}
+                      to="/bugs/$id"
+                      params={{ id: String(bug.id) }}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm transition-colors hover:bg-muted/40"
+                    >
+                      <span className="min-w-0 truncate">
+                        <span className="font-mono text-xs text-muted-foreground">{bug.bug_id}</span>{" "}
+                        {bug.title}
+                      </span>
+                      <Badge variant="outline">{bug.status}</Badge>
+                    </Link>
+                  ))}
               </div>
+              <DashboardPagination
+                page={focusedPage}
+                totalItems={focusedBugs.length}
+                pageSize={6}
+                onPageChange={setFocusedPage}
+                itemLabel="errors"
+              />
             </div>
           )}
         </div>

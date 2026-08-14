@@ -59,7 +59,7 @@ import { datedCsvFilename, downloadCsv, toCsv } from "@/lib/csv-export";
 import { downloadBugImportTemplate, downloadBugsExcel } from "@/lib/bug-excel";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
+import { canAssignBug, canChangeBugStatus, canReportBugs, canViewBug } from "@/lib/permissions";
 import { BugKanbanBoard } from "@/components/bugs/BugKanbanBoard";
 import { BugCardGrid } from "@/components/bugs/BugCardGrid";
 import { useActiveProfiles } from "@/hooks/useActiveProfiles";
@@ -316,7 +316,7 @@ function BugsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
   const selectableRows = useMemo(
-    () => rows.filter((bug) => canChangeBugStatus(bug, user)),
+    () => rows.filter((bug) => canChangeBugStatus(bug, user) || canAssignBug(bug, user)),
     [rows, user],
   );
 
@@ -902,6 +902,7 @@ function BugsPage() {
               rows={rows}
               isLoading={isLoading}
               user={user}
+              profiles={profiles ?? []}
               profileMap={profileMap}
               projectMap={projectMap}
               selectedIds={bulkAssign.selectedIds}

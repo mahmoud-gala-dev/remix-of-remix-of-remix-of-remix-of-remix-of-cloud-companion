@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorBoundary, RouteNotFound } from "@/components/layout/route-boundaries";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ import {
 } from "@/components/dashboard/dashboard-parts";
 import { RoleDashboardPanels } from "@/components/dashboard/RoleDashboardPanels";
 import { TeamFlowMap } from "@/components/dashboard/TeamFlowMap";
+import { DashboardPagination } from "@/components/dashboard/DashboardPagination";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -198,6 +200,20 @@ function DashboardPage() {
   }));
   const moduleList = baseStats.by_module;
   const recentBugs = recentQuery.data ?? [];
+
+  const [modulePage, setModulePage] = useState(1);
+  const MODULES_PER_PAGE = 5;
+  const paginatedModules = moduleList.slice(
+    (modulePage - 1) * MODULES_PER_PAGE,
+    modulePage * MODULES_PER_PAGE,
+  );
+
+  const [recentPage, setRecentPage] = useState(1);
+  const RECENT_PER_PAGE = 5;
+  const paginatedRecentBugs = recentBugs.slice(
+    (recentPage - 1) * RECENT_PER_PAGE,
+    recentPage * RECENT_PER_PAGE,
+  );
 
   if (statsQuery.isLoading || recentQuery.isLoading) return <DashboardSkeleton />;
   if (statsQuery.isError || recentQuery.isError) return <DashboardError />;
@@ -419,52 +435,61 @@ function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionCard title={t("dash.card.modules")} icon={Layers}>
           {moduleList.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="px-3 py-2 text-start text-xs font-semibold text-muted-foreground">
-                      {t("dash.col.module")}
-                    </th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      {t("dash.col.total")}
-                    </th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      {t("dash.col.open")}
-                    </th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
-                      {t("dash.col.resolved")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {moduleList.map((m) => (
-                    <tr
-                      key={m.module}
-                      className="border-b border-border/30 transition-colors hover:bg-muted/30"
-                    >
-                      <td className="px-3 py-2.5 font-medium">{m.module}</td>
-                      <td className="px-3 py-2.5 text-end tabular-nums">{m.total}</td>
-                      <td className="px-3 py-2.5 text-end">
-                        <Badge
-                          variant="outline"
-                          className="border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive"
-                        >
-                          {m.open}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2.5 text-end">
-                        <Badge
-                          variant="outline"
-                          className="border-success/30 bg-success/10 text-xs font-semibold text-success"
-                        >
-                          {m.fixed}
-                        </Badge>
-                      </td>
+            <div className="space-y-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="px-3 py-2 text-start text-xs font-semibold text-muted-foreground">
+                        {t("dash.col.module")}
+                      </th>
+                      <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
+                        {t("dash.col.total")}
+                      </th>
+                      <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
+                        {t("dash.col.open")}
+                      </th>
+                      <th className="px-3 py-2 text-end text-xs font-semibold text-muted-foreground">
+                        {t("dash.col.resolved")}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedModules.map((m) => (
+                      <tr
+                        key={m.module}
+                        className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                      >
+                        <td className="px-3 py-2.5 font-medium">{m.module}</td>
+                        <td className="px-3 py-2.5 text-end tabular-nums">{m.total}</td>
+                        <td className="px-3 py-2.5 text-end">
+                          <Badge
+                            variant="outline"
+                            className="border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive"
+                          >
+                            {m.open}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2.5 text-end">
+                          <Badge
+                            variant="outline"
+                            className="border-success/30 bg-success/10 text-xs font-semibold text-success"
+                          >
+                            {m.fixed}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <DashboardPagination
+                page={modulePage}
+                totalItems={moduleList.length}
+                pageSize={MODULES_PER_PAGE}
+                onPageChange={setModulePage}
+                itemLabel="modules"
+              />
             </div>
           ) : (
             <EmptyPanel
@@ -476,17 +501,26 @@ function DashboardPage() {
 
         <SectionCard title={t("dash.card.recent")} icon={Activity}>
           {recentBugs.length ? (
-            <div className="space-y-1">
-              {recentBugs.map((bug) => (
-                <BugLink
-                  key={bug.id}
-                  id={bug.id}
-                  code={bug.bug_id}
-                  title={bug.title}
-                  status={bug.status}
-                  priority={bug.priority}
-                />
-              ))}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                {paginatedRecentBugs.map((bug) => (
+                  <BugLink
+                    key={bug.id}
+                    id={bug.id}
+                    code={bug.bug_id}
+                    title={bug.title}
+                    status={bug.status}
+                    priority={bug.priority}
+                  />
+                ))}
+              </div>
+              <DashboardPagination
+                page={recentPage}
+                totalItems={recentBugs.length}
+                pageSize={RECENT_PER_PAGE}
+                onPageChange={setRecentPage}
+                itemLabel="errors"
+              />
             </div>
           ) : (
             <EmptyPanel
